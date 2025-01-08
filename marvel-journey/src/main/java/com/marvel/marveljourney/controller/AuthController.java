@@ -2,6 +2,8 @@ package com.marvel.marveljourney.controller;
 
 import com.marvel.marveljourney.model.User;
 import com.marvel.marveljourney.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -9,8 +11,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
+@Tag(name = "Auth", description = "APIs de autenticação")
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
@@ -21,6 +23,7 @@ public class AuthController {
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 
+    @Operation(summary = "Registrar um novo usuário")
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody User user) {
         if (userService.findByEmail(user.getEmail()).isPresent()) {
@@ -39,18 +42,23 @@ public class AuthController {
         return ResponseEntity.ok("Usuário registrado com sucesso.");
     }
 
+    @Operation(summary = "Login de um usuário")
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@RequestBody User loginRequest) {
-        Optional<User> userOptional = userService.findByEmail(loginRequest.getEmail());
+        var userOptional = userService.findByEmail(loginRequest.getEmail());
 
         if (userOptional.isEmpty()) {
             return ResponseEntity.status(401).body("Credenciais inválidas.");
         }
 
-        User user = userOptional.get();
+        var user = userOptional.get();
 
         if (!passwordEncoder.matches(loginRequest.getPasswordHash(), user.getPasswordHash())) {
             return ResponseEntity.status(401).body("Credenciais inválidas.");
+        }
+
+        if (user.getMetadata() == null) {
+            user.setMetadata(new User.Metadata());
         }
 
         user.getMetadata().setLastLoginAt(Instant.now());
