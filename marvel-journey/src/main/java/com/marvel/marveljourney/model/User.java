@@ -22,6 +22,10 @@ public class User {
     private LoginAttempts loginAttempts;
     private List<String> roles;
     private Metadata metadata;
+    private String mfaSecret;
+    private boolean mfaEnabled;
+    private int failedLoginAttempts;
+    private Instant lockoutEndTime;
 
     @Data
     public static class LoginAttempts {

@@ -23,6 +23,67 @@ db.createCollection("users", {
                 status: {
                     enum: ["active", "inactive", "banned"],
                     description: "Estado atual do usuário"
+                },
+                createdAt: {
+                    bsonType: "date",
+                    description: "Data de criação do usuário"
+                },
+                updatedAt: {
+                    bsonType: "date",
+                    description: "Data da última atualização do usuário"
+                },
+                loginAttempts: {
+                    bsonType: "object",
+                    properties: {
+                        count: {
+                            bsonType: "int",
+                            description: "Número de tentativas de login"
+                        },
+                        lastAttemptAt: {
+                            bsonType: "date",
+                            description: "Data da última tentativa de login"
+                        }
+                    }
+                },
+                roles: {
+                    bsonType: "array",
+                    items: {
+                        bsonType: "string"
+                    },
+                    description: "Lista de papéis do usuário"
+                },
+                metadata: {
+                    bsonType: "object",
+                    properties: {
+                        lastLoginAt: {
+                            bsonType: "date",
+                            description: "Data do último login"
+                        },
+                        ipAddress: {
+                            bsonType: "string",
+                            description: "Endereço IP do último login"
+                        },
+                        userAgent: {
+                            bsonType: "string",
+                            description: "User agent do último login"
+                        }
+                    }
+                },
+                mfaSecret: {
+                    bsonType: "string",
+                    description: "Segredo do MFA"
+                },
+                mfaEnabled: {
+                    bsonType: "bool",
+                    description: "Indica se o MFA está habilitado"
+                },
+                failedLoginAttempts: {
+                    bsonType: "int",
+                    description: "Número de tentativas de login falhadas"
+                },
+                lockoutEndTime: {
+                    bsonType: "date",
+                    description: "Data e hora do fim do bloqueio de conta"
                 }
             }
         }
