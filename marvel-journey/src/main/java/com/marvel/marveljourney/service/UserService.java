@@ -86,4 +86,31 @@ public class UserService {
         }
         return true;
     }
+
+    public void updateLoginAttempts(User user) {
+        if (user.getLoginAttempts() == null) {
+            user.setLoginAttempts(new User.LoginAttempts());
+        }
+        user.getLoginAttempts().setCount(user.getLoginAttempts().getCount() + 1);
+        user.getLoginAttempts().setLastAttemptAt(Instant.now());
+        updateUser(user);
+    }
+
+    public void resetLoginAttempts(User user) {
+        if (user.getLoginAttempts() != null) {
+            user.getLoginAttempts().setCount(0);
+            user.getLoginAttempts().setLastAttemptAt(null);
+            updateUser(user);
+        }
+    }
+
+    public void updateMetadata(User user, String ipAddress, String userAgent) {
+        if (user.getMetadata() == null) {
+            user.setMetadata(new User.Metadata());
+        }
+        user.getMetadata().setLastLoginAt(Instant.now());
+        user.getMetadata().setIpAddress(ipAddress);
+        user.getMetadata().setUserAgent(userAgent);
+        updateUser(user);
+    }
 }

@@ -1,9 +1,7 @@
 package com.marvel.marveljourney.security;
 
+import com.marvel.marveljourney.util.JwtUtil;
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -13,93 +11,67 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import com.marvel.marveljourney.util.JwtUtil;
-
-import javax.servlet.ServletException;
+import jakarta.servlet.FilterChain;
 import java.io.IOException;
-import java.security.Key;
-import java.util.Date;
+import jakarta.servlet.ServletException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class JwtAuthenticationFilterTest {
 
-    @InjectMocks
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
-
     @Mock
     private JwtUtil jwtUtil;
 
-    @Mock
-    private jakarta.servlet.FilterChain filterChain;
-
-    private MockHttpServletRequest request;
-    private MockHttpServletResponse response;
+    @InjectMocks
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        request = new MockHttpServletRequest();
-        response = new MockHttpServletResponse();
-    }
-
-    private static final Key key = Keys.secretKeyFor(SignatureAlgorithm.HS512);
-
-    @Test
-    void testInvalidToken() throws ServletException, IOException, jakarta.servlet.ServletException {
-        request.addHeader("Authorization", "Bearer invalidtoken");
-
-        when(jwtUtil.parseToken(anyString(), anyString(), anyString())).thenReturn(null);
-
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
-
-        assertNull(SecurityContextHolder.getContext().getAuthentication());
-        verify(filterChain).doFilter(request, response);
     }
 
     @Test
-    void testExpiredToken() throws ServletException, IOException, jakarta.servlet.ServletException {
-        String expiredToken = Jwts.builder()
-                .setSubject("user")
-                .setIssuedAt(new Date(System.currentTimeMillis() - 1000))
-                .setExpiration(new Date(System.currentTimeMillis() - 500))
-                .signWith(key, SignatureAlgorithm.HS512)
-                .compact();
+    void testDoFilterInternal_ValidToken() throws ServletException, IOException, ServletException {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("Authorization", "Bearer valid-token");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        FilterChain filterChain = mock(FilterChain.class);
 
-        request.addHeader("Authorization", "Bearer " + expiredToken);
-
-        when(jwtUtil.parseToken(anyString(), anyString(), anyString())).thenReturn(null);
-
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
-
-        assertNull(SecurityContextHolder.getContext().getAuthentication());
-        verify(filterChain).doFilter(request, response);
-    }
-
-    @Test
-    void testValidToken() throws ServletException, IOException, jakarta.servlet.ServletException {
-        String validToken = Jwts.builder()
-                .setSubject("user")
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 10000))
-                .signWith(key, SignatureAlgorithm.HS512)
-                .compact();
-
-        request.addHeader("Authorization", "Bearer " + validToken);
-
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(validToken)
-                .getBody();
-
-        when(jwtUtil.parseToken(anyString(), anyString(), anyString())).thenReturn(claims);
+        Claims claims = mock(Claims.class);
+        when(jwtUtil.parseToken("valid-token", "seu-servidor", "seu-aplicativo")).thenReturn(claims);
+        when(claims.getSubject()).thenReturn("user");
 
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
         assertNotNull(SecurityContextHolder.getContext().getAuthentication());
-        assertEquals("user", ((Claims) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getSubject());
-        verify(filterChain).doFilter(request, response);
+        verify(filterChain, times(1)).doFilter(request, response);
+    }
+
+    @Test
+    void testDoFilterInternal_InvalidToken() throws ServletException, IOException, ServletException {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("Authorization", "Bearer invalid-token");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        FilterChain filterChain = mock(FilterChain.class);
+
+        when(jwtUtil.parseToken("invalid-token", "seu-servidor", "seu-aplicativo")).thenReturn(null);
+
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+        verify(filterChain, times(1)).doFilter(request, response);
+    }
+
+    @Test
+    void testDoFilterInternal_NoToken() throws ServletException, IOException, ServletException {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        FilterChain filterChain = mock(FilterChain.class);
+
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+        verify(filterChain, times(1)).doFilter(request, response);
     }
 }

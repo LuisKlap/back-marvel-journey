@@ -27,10 +27,16 @@ public class UserController {
     @Operation(summary = "Obter perfil do usuário")
     @GetMapping("/profile")
     public ResponseEntity<?> getUserProfile(@AuthenticationPrincipal UserDetails userDetails) {
-        User user = userService.findByEmail(userDetails.getUsername()).orElse(null);
-        if (user == null) {
-            return ResponseEntity.status(404).body("Usuário não encontrado.");
+        try {
+            User user = userService.findByEmail(userDetails.getUsername()).orElse(null);
+            if (user == null) {
+                logger.warn("Usuário não encontrado: {}", userDetails.getUsername());
+                return ResponseEntity.status(404).body("Usuário não encontrado.");
+            }
+            return ResponseEntity.ok(user);
+        } catch (Exception e) {
+            logger.error("Erro ao obter perfil do usuário", e);
+            return ResponseEntity.status(500).body("Erro interno do servidor");
         }
-        return ResponseEntity.ok(user);
     }
 }

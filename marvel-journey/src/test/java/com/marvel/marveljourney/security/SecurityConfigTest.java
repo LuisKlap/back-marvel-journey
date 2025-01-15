@@ -1,55 +1,40 @@
 package com.marvel.marveljourney.security;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfigurationSource;
 
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-public class SecurityConfigTest {
+@Import(SecurityConfig.class)
+class SecurityConfigTest {
 
     @Autowired
-    private WebApplicationContext context;
+    private SecurityConfig securityConfig;
 
-    private MockMvc mockMvc;
-
-    @BeforeEach
-    public void setUp() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
+    @Test
+    void testPasswordEncoder() {
+        BCryptPasswordEncoder encoder = securityConfig.passwordEncoder();
+        assertNotNull(encoder);
+        assertTrue(encoder.matches("password", encoder.encode("password")));
     }
 
-    // @Test
-    // public void testPublicEndpoint() throws Exception {
-    //     mockMvc.perform(get("/auth/login"))
-    //             .andExpect(status().isOk());
-    // }
+    @Test
+    void testCorsConfigurationSource() {
+        CorsConfigurationSource source = securityConfig.corsConfigurationSource();
+        assertNotNull(source);
+    }
 
-    // @Test
-    // @WithMockUser(roles = "USER")
-    // public void testUserEndpointWithUserRole() throws Exception {
-    //     mockMvc.perform(get("/user/profile").with(csrf()))
-    //             .andExpect(status().isOk());
-    // }
-
-    // @Test
-    // @WithMockUser(roles = "ADMIN")
-    // public void testAdminEndpointWithAdminRole() throws Exception {
-    //     mockMvc.perform(get("/admin/dashboard").with(csrf()))
-    //             .andExpect(status().isOk());
-    // }
-
-    // @Test
-    // @WithMockUser(roles = "USER")
-    // public void testAdminEndpointWithUserRole() throws Exception {
-    //     mockMvc.perform(get("/admin/dashboard").with(csrf()))
-    //             .andExpect(status().isForbidden());
-    // }
+    @Test
+    void testSecurityFilterChain() throws Exception {
+        HttpSecurity http = org.mockito.Mockito.mock(HttpSecurity.class);
+        SecurityFilterChain filterChain = securityConfig.securityFilterChain(http);
+        assertNotNull(filterChain);
+    }
 }

@@ -26,6 +26,7 @@ public class User {
     private boolean mfaEnabled;
     private int failedLoginAttempts;
     private Instant lockoutEndTime;
+    private boolean isTest;
 
     @Data
     public static class LoginAttempts {
@@ -38,5 +39,13 @@ public class User {
         private Instant lastLoginAt;
         private String ipAddress;
         private String userAgent;
+    }
+
+    public boolean getIsTest() {
+        return isTest;
+    }
+
+    public void setIsTest(boolean isTest) {
+        this.isTest = isTest;
     }
 }

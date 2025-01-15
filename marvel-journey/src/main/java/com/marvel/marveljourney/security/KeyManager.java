@@ -11,17 +11,20 @@ import java.util.List;
 @Component
 public class KeyManager {
 
+    private static final String SECRET_KEY_1 = "mysecretkeymysecretkeymysecretkeymysecretkey1";
+    private static final String SECRET_KEY_2 = "mysecretkeymysecretkeymysecretkeymysecretkey2";
+    private static final String SECRET_KEY_3 = "mysecretkeymysecretkeymysecretkeymysecretkey3";
+
     private List<Key> keys;
     private int activeKeyIndex;
 
     @PostConstruct
     public void init() {
         keys = new ArrayList<>();
-        // Adicione várias chaves
-        keys.add(Keys.hmacShaKeyFor("mysecretkeymysecretkeymysecretkeymysecretkey1".getBytes()));
-        keys.add(Keys.hmacShaKeyFor("mysecretkeymysecretkeymysecretkeymysecretkey2".getBytes()));
-        keys.add(Keys.hmacShaKeyFor("mysecretkeymysecretkeymysecretkeymysecretkey3".getBytes()));
-        activeKeyIndex = 0; // Inicialmente, use a primeira chave
+        keys.add(Keys.hmacShaKeyFor(SECRET_KEY_1.getBytes()));
+        keys.add(Keys.hmacShaKeyFor(SECRET_KEY_2.getBytes()));
+        keys.add(Keys.hmacShaKeyFor(SECRET_KEY_3.getBytes()));
+        activeKeyIndex = 0;
     }
 
     public Key getActiveKey() {

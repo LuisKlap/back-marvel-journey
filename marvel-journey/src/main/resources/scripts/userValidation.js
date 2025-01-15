@@ -84,6 +84,10 @@ db.createCollection("users", {
                 lockoutEndTime: {
                     bsonType: "date",
                     description: "Data e hora do fim do bloqueio de conta"
+                },
+                isTest: {
+                    bsonType: "bool",
+                    description: "Indica se o registro é de teste"
                 }
             }
         }

@@ -32,9 +32,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (header != null && header.startsWith("Bearer ")) {
             String token = header.substring(7);
             Claims claims = jwtUtil.parseToken(token, ISSUER, AUDIENCE);
-    
+
             if (claims != null) {
-                logger.info("Token válido para o usuário: " + claims.getSubject());
+                logger.info("Token válido para o usuário: {}", claims.getSubject());
                 var authentication = new JwtAuthenticationToken(claims);
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
