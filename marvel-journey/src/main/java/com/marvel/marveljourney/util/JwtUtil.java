@@ -20,12 +20,11 @@ public class JwtUtil {
     @Autowired
     private KeyManager keyManager;
 
-    private Key key = Keys.secretKeyFor(SignatureAlgorithm.HS512);
-
     private static final Logger logger = LoggerFactory.getLogger(JwtUtil.class);
     private static final String ISSUER_AUDIENCE_MISMATCH = "Issuer or Audience does not match";
 
     public String generateToken(String subject, long expirationTime, String issuer, String audience) {
+        Key key = keyManager.getActiveKey();
         return Jwts.builder()
                 .setSubject(subject)
                 .setIssuedAt(new Date())
