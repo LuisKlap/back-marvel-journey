@@ -19,7 +19,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private static final String[] PUBLIC_URLS = {
-            "/auth/register", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
+            "/auth/register", "/auth/login", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
     };
 
     private static final String[] ADMIN_URLS = {"/admin/**"};

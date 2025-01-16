@@ -9,6 +9,12 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class MarvelJourneyApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(MarvelJourneyApplication.class, args);
+        SpringApplication app = new SpringApplication(MarvelJourneyApplication.class);
+        app.addListeners((applicationEvent) -> {
+            if (applicationEvent instanceof org.springframework.context.event.ContextClosedEvent) {
+                System.out.println("Encerrando a aplicação...");
+            }
+        });
+        app.run(args);
     }
 }

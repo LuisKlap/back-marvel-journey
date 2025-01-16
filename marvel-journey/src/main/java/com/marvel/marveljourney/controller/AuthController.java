@@ -71,6 +71,7 @@ public class AuthController {
             user.setRoles(List.of("user"));
             user.setLoginAttempts(new User.LoginAttempts());
             user.setMetadata(new User.Metadata());
+            user.setIsTest(false);
 
             userService.saveUser(user);
             logger.info("Novo usuário registrado: {}", user.getEmail());
