@@ -23,12 +23,12 @@ public class PasswordValidatorUtil {
             new CharacterRule(EnglishCharacterData.LowerCase, 1),
             new CharacterRule(EnglishCharacterData.Digit, 1),
             new CharacterRule(EnglishCharacterData.Special, 1),
-            new WhitespaceRule(),
-            new DictionaryRule(new WordListDictionary(WordLists.createFromReader(
-                new FileReader[] { new FileReader("src/main/resources/common-passwords.txt") },
-                false,
-                new ArraysSort()
-            )))
+            new WhitespaceRule()
+            // new DictionaryRule(new WordListDictionary(WordLists.createFromReader(
+            //     new FileReader[] { new FileReader("src/main/resources/common-passwords.txt") },
+            //     false,
+            //     new ArraysSort()
+            // )))
         ));
     }
 

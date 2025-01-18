@@ -7,18 +7,23 @@ import com.marvel.marveljourney.model.User;
 import com.marvel.marveljourney.service.UserService;
 import com.marvel.marveljourney.util.JwtUtil;
 import com.marvel.marveljourney.util.PasswordValidatorUtil;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 @Tag(name = "Auth", description = "APIs de autenticação")
 @RestController
@@ -45,7 +50,6 @@ public class AuthController {
     private static final String ISSUER = "seu-servidor";
     private static final String AUDIENCE = "seu-aplicativo";
 
-    
     @Operation(summary = "Registrar um novo usuário")
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody RegisterRequest registerRequest) {
@@ -58,7 +62,8 @@ public class AuthController {
             if (!passwordValidatorUtil.validate(registerRequest.getPassword())) {
                 logger.warn("Tentativa de registro com senha fraca: {}", registerRequest.getEmail());
                 return ResponseEntity.badRequest().body(
-                        "Senha fraca. " + String.join(", ", passwordValidatorUtil.getMessages(registerRequest.getPassword())));
+                        "Senha fraca. "
+                                + String.join(", ", passwordValidatorUtil.getMessages(registerRequest.getPassword())));
             }
 
             User user = new User();
@@ -68,7 +73,7 @@ public class AuthController {
             user.setUpdatedAt(Instant.now());
             user.setTermsAcceptedAt(Instant.now()); // Adicionando a propriedade termsAcceptedAt
             user.setStatus("active");
-            user.setRoles(List.of("user"));
+            user.setRoles(List.of("USER"));
             user.setLoginAttempts(new User.LoginAttempts());
             user.setMetadata(new User.Metadata());
             user.setIsTest(false);
@@ -77,6 +82,15 @@ public class AuthController {
             logger.info("Novo usuário registrado: {}", user.getEmail());
 
             String token = jwtUtil.generateToken(user.getEmail(), jwtExpirationTime, ISSUER, AUDIENCE);
+
+            // teste de parse token
+            // Claims claims = jwtUtil.parseToken(token, ISSUER, AUDIENCE);
+            // logger.info("Token válido para o usuário: {}", claims.getSubject());
+            // logger.info("Token emitido em: {}", claims.getIssuedAt());
+            // logger.info("Token expira em: {}", claims.getExpiration());
+            // logger.info("Token emitido por: {}", claims.getIssuer());
+            // logger.info("Token emitido para: {}", claims.getAudience());
+
             return ResponseEntity.ok(token);
         } catch (Exception e) {
             logger.error("Erro ao registrar usuário", e);
@@ -167,6 +181,17 @@ public class AuthController {
         } catch (Exception e) {
             logger.error("Erro ao verificar MFA", e);
             return ResponseEntity.status(500).body("Erro interno do servidor");
+        }
+    }
+
+    @PostMapping("/parse-token")
+    public ResponseEntity<?> parseToken(@RequestBody Map<String, String> request) {
+        String token = request.get("token");
+        try {
+            Claims claims = jwtUtil.parseToken(token, ISSUER, AUDIENCE);
+            return ResponseEntity.ok(claims);
+        } catch (JwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido");
         }
     }
 }

@@ -9,7 +9,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfigurationSource;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
 @Import(SecurityConfig.class)
@@ -17,6 +18,9 @@ class SecurityConfigTest {
 
     @Autowired
     private SecurityConfig securityConfig;
+
+    @Autowired
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Test
     void testPasswordEncoder() {
@@ -34,7 +38,7 @@ class SecurityConfigTest {
     @Test
     void testSecurityFilterChain() throws Exception {
         HttpSecurity http = org.mockito.Mockito.mock(HttpSecurity.class);
-        SecurityFilterChain filterChain = securityConfig.securityFilterChain(http);
+        SecurityFilterChain filterChain = securityConfig.securityFilterChain(http, jwtAuthenticationFilter);
         assertNotNull(filterChain);
     }
 }

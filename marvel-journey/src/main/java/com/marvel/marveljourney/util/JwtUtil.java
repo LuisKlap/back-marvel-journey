@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.security.Key;
+import java.util.Base64;
 import java.util.Date;
 
 @Component
@@ -29,6 +30,7 @@ public class JwtUtil {
     public String generateToken(String subject, long expirationTime, String issuer, String audience) {
         try {
             Key key = keyManager.getActiveKey();
+            logger.info("Chave ativa na geração do token: {}", Base64.getEncoder().encodeToString(key.getEncoded()));
             String token = Jwts.builder()
                     .setSubject(subject)
                     .setIssuedAt(clock.now())
@@ -45,8 +47,9 @@ public class JwtUtil {
         }
     }
 
-    public Claims parseToken(String token, String expectedIssuer, String expectedAudience) {
+        public Claims parseToken(String token, String expectedIssuer, String expectedAudience) {
         Key key = keyManager.getActiveKey();
+        logger.info("Chave ativa no parse do token: {}", Base64.getEncoder().encodeToString(key.getEncoded()));
         try {
             Claims claims = Jwts.parserBuilder()
                     .setSigningKey(key)
@@ -54,7 +57,7 @@ public class JwtUtil {
                     .build()
                     .parseClaimsJws(token)
                     .getBody();
-
+    
             if (isIssuerAndAudienceValid(claims, expectedIssuer, expectedAudience)) {
                 logger.info("Token JWT válido para o sujeito: {}", claims.getSubject());
                 return claims;

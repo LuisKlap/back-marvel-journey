@@ -29,6 +29,7 @@ public class UserService {
     private MfaUtil mfaUtil;
 
     public Optional<User> findByEmail(String email) {
+        logger.debug("Procurando usuário por email: {}", email);
         return userRepository.findByEmail(email);
     }
 
@@ -46,6 +47,7 @@ public class UserService {
     }
 
     public boolean validatePassword(String rawPassword, String encodedPassword) {
+        logger.debug("Validando senha para o usuário: {}", rawPassword);
         return passwordEncoder.matches(rawPassword, encodedPassword);
     }
 
@@ -59,13 +61,16 @@ public class UserService {
     }
 
     public boolean verifyMfa(User user, int code) {
+        logger.debug("Verificando MFA para o usuário: {}", user.getEmail());
         return mfaUtil.validateCode(user.getMfaSecret(), code);
     }
 
     public void increaseFailedAttempts(User user) {
         user.setFailedLoginAttempts(user.getFailedLoginAttempts() + 1);
+        logger.warn("Aumentando tentativas falhas para o usuário: {}. Tentativas falhas: {}", user.getEmail(), user.getFailedLoginAttempts());
         if (user.getFailedLoginAttempts() >= MAX_FAILED_ATTEMPTS) {
             user.setLockoutEndTime(Instant.now().plusMillis(LOCKOUT_DURATION));
+            logger.warn("Usuário bloqueado devido a tentativas falhas: {}", user.getEmail());
         }
         updateUser(user);
     }
@@ -73,6 +78,7 @@ public class UserService {
     public void resetFailedAttempts(User user) {
         user.setFailedLoginAttempts(0);
         user.setLockoutEndTime(null);
+        logger.info("Resetando tentativas falhas para o usuário: {}", user.getEmail());
         updateUser(user);
     }
 
@@ -84,6 +90,7 @@ public class UserService {
             resetFailedAttempts(user);
             return false;
         }
+        logger.warn("Conta bloqueada para o usuário: {}", user.getEmail());
         return true;
     }
 
@@ -93,6 +100,7 @@ public class UserService {
         }
         user.getLoginAttempts().setCount(user.getLoginAttempts().getCount() + 1);
         user.getLoginAttempts().setLastAttemptAt(Instant.now());
+        logger.info("Atualizando tentativas de login para o usuário: {}", user.getEmail());
         updateUser(user);
     }
 
@@ -100,6 +108,7 @@ public class UserService {
         if (user.getLoginAttempts() != null) {
             user.getLoginAttempts().setCount(0);
             user.getLoginAttempts().setLastAttemptAt(null);
+            logger.info("Resetando tentativas de login para o usuário: {}", user.getEmail());
             updateUser(user);
         }
     }
@@ -111,6 +120,7 @@ public class UserService {
         user.getMetadata().setLastLoginAt(Instant.now());
         user.getMetadata().setIpAddress(ipAddress);
         user.getMetadata().setUserAgent(userAgent);
+        logger.info("Atualizando metadata para o usuário: {}", user.getEmail());
         updateUser(user);
     }
 }

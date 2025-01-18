@@ -23,7 +23,7 @@ class UserRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        userRepository.deleteAllByIsTest(true);
+        userRepository.deleteAll();
     }
 
     @AfterEach
