@@ -3,6 +3,7 @@ package com.marvel.marveljourney.controller;
 import com.marvel.marveljourney.model.User;
 import com.marvel.marveljourney.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@SecurityRequirement(name = "bearerAuth")
 @Tag(name = "User", description = "APIs de usuário")
 @RestController
 @RequestMapping("/user")
@@ -24,7 +26,7 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    @Operation(summary = "Obter perfil do usuário")
+    @Operation(summary = "Obter perfil do usuário", description = "Retorna o perfil do usuário logado")
     @GetMapping("/profile")
     public ResponseEntity<?> getUserProfile(@AuthenticationPrincipal UserDetails userDetails) {
         try {

@@ -22,8 +22,8 @@ public class SecurityConfig {
             "/auth/register", "/auth/login", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
     };
 
-    private static final String[] ADMIN_URLS = {"/admin/**"};
-    private static final String[] USER_URLS = {"/user/**"};
+    private static final String[] ADMIN_URLS = { "/admin/**" };
+    private static final String[] USER_URLS = { "/user/**" };
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -33,8 +33,8 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(PUBLIC_URLS).permitAll()
-                        .requestMatchers(ADMIN_URLS).hasRole("ADMIN")
-                        .requestMatchers(USER_URLS).hasRole("USER")
+                        .requestMatchers(ADMIN_URLS).hasRole("admin")
+                        .requestMatchers(USER_URLS).hasRole("user")
                         .anyRequest().authenticated())
                 .addFilterBefore(new JwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
                 .headers(headers -> headers
@@ -43,8 +43,7 @@ public class SecurityConfig {
                         .contentTypeOptions(contentType -> contentType.disable())
                         .frameOptions(frameOptions -> frameOptions.sameOrigin())
                         .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000))
-                        .xssProtection(xss -> xss.disable())
-                        .contentSecurityPolicy(csp -> csp.policyDirectives("script-src 'self'")));
+                        .xssProtection(xss -> xss.disable()));
         return http.build();
     }
 
