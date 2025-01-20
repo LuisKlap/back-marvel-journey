@@ -94,7 +94,7 @@ class UserRepositoryTest {
         user2.setPasswordHash("hashedPassword2");
         user2.setTermsAcceptedAt(Instant.now());
         user2.setStatus("active");
-        user2.setRoles(List.of("user"));
+        user2.setRoles(List.of("ROLE_USER"));
         user2.setIsTest(true);
         userRepository.save(user2);
 

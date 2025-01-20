@@ -31,9 +31,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
         String header = request.getHeader("Authorization");
+        logger.debug("Cabeçalho de autorização: {}", header);
+
         if (header != null && header.startsWith("Bearer ")) {
             String token = header.substring(7);
-            Claims claims = jwtUtil.parseToken(token, ISSUER, AUDIENCE);
+            logger.debug("Token extraído: {}", token);
+
+            Claims claims = null;
+            try {
+                claims = jwtUtil.parseToken(token, ISSUER, AUDIENCE);
+                logger.debug("Claims extraídas: {}", claims);
+            } catch (Exception e) {
+                logger.error("Erro ao analisar o token JWT", e);
+            }
 
             if (claims != null) {
                 logger.info("Token válido para o usuário: {}", claims.getSubject());

@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @SecurityRequirement(name = "bearerAuth")
 @Tag(name = "User", description = "APIs de usuário")
+@PreAuthorize("hasAuthority('ROLE_USER')")
 @RestController
 @RequestMapping("/user")
 public class UserController {
@@ -29,6 +31,11 @@ public class UserController {
     @Operation(summary = "Obter perfil do usuário", description = "Retorna o perfil do usuário logado")
     @GetMapping("/profile")
     public ResponseEntity<?> getUserProfile(@AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            logger.warn("UserDetails está nulo");
+            return ResponseEntity.status(401).body("Usuário não autenticado.");
+        }
+
         logger.debug("Iniciando getUserProfile para o usuário: {}", userDetails.getUsername());
         try {
             User user = userService.findByEmail(userDetails.getUsername()).orElse(null);

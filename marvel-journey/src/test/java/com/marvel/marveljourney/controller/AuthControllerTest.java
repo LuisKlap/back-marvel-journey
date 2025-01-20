@@ -53,7 +53,7 @@ class AuthControllerTest {
         when(userService.findByEmail(anyString())).thenReturn(Optional.empty());
         when(passwordValidatorUtil.validate(anyString())).thenReturn(true);
         when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
-        when(jwtUtil.generateToken(anyString(), anyLong(), anyString(), anyString())).thenReturn("jwtToken");
+        when(jwtUtil.generateToken(anyString(), anyLong(), anyString(), anyString(), anyList())).thenReturn("jwtToken");
 
         ResponseEntity<?> response = authController.registerUser(registerRequest);
 
@@ -92,25 +92,27 @@ class AuthControllerTest {
         assertEquals("Senha fraca. Password is too weak", response.getBody());
     }
 
-    @Test
+        @Test
     void testLoginUser_Success() {
         LoginRequest loginRequest = new LoginRequest(null, null, null, null);
         loginRequest.setEmail("test@example.com");
         loginRequest.setPassword("StrongPassword123");
-
+    
         User user = new User();
         user.setEmail("test@example.com");
         user.setPasswordHash("encodedPassword");
+        user.setRoles(List.of("ROLE_USER"));
         user.setMfaEnabled(false);
-
+    
         when(userService.findByEmail(anyString())).thenReturn(Optional.of(user));
         when(userService.validatePassword(anyString(), anyString())).thenReturn(true);
-        when(jwtUtil.generateToken(anyString(), anyLong(), anyString(), anyString())).thenReturn("jwtToken");
-
+        when(jwtUtil.generateToken(anyString(), anyLong(), anyString(), anyString(), anyList())).thenReturn("jwtToken");
+    
         ResponseEntity<?> response = authController.loginUser(loginRequest);
-
+    
         assertEquals(200, response.getStatusCode().value());
         assertEquals("jwtToken", response.getBody());
+        verify(jwtUtil).generateToken(eq("test@example.com"), anyLong(), eq("seu-servidor"), eq("seu-aplicativo"), eq(List.of("ROLE_USER")));
     }
 
     @Test
@@ -153,18 +155,20 @@ class AuthControllerTest {
     void testVerifyMfa_Success() {
         MfaRequest mfaRequest = new MfaRequest(null);
         mfaRequest.setEmail("test@example.com");
-
+    
         User user = new User();
         user.setEmail("test@example.com");
-
+        user.setRoles(List.of("ROLE_USER"));
+    
         when(userService.findByEmail(anyString())).thenReturn(Optional.of(user));
         when(userService.verifyMfa(any(User.class), anyInt())).thenReturn(true);
-        when(jwtUtil.generateToken(anyString(), anyLong(), anyString(), anyString())).thenReturn("jwtToken");
-
+        when(jwtUtil.generateToken(anyString(), anyLong(), anyString(), anyString(), anyList())).thenReturn("jwtToken");
+    
         ResponseEntity<?> response = authController.verifyMfa(mfaRequest, 123456);
-
+    
         assertEquals(200, response.getStatusCode().value());
         assertEquals("jwtToken", response.getBody());
+        verify(jwtUtil).generateToken(eq("test@example.com"), anyLong(), eq("seu-servidor"), eq("seu-aplicativo"), eq(List.of("ROLE_USER")));
     }
 
     @Test

@@ -73,7 +73,7 @@ public class AuthController {
             user.setUpdatedAt(Instant.now());
             user.setTermsAcceptedAt(Instant.now()); // Adicionando a propriedade termsAcceptedAt
             user.setStatus("active");
-            user.setRoles(List.of("USER"));
+            user.setRoles(List.of("ROLE_USER"));
             user.setLoginAttempts(new User.LoginAttempts());
             user.setMetadata(new User.Metadata());
             user.setIsTest(false);
@@ -81,7 +81,7 @@ public class AuthController {
             userService.saveUser(user);
             logger.info("Novo usuário registrado: {}", user.getEmail());
 
-            String token = jwtUtil.generateToken(user.getEmail(), jwtExpirationTime, ISSUER, AUDIENCE);
+            String token = jwtUtil.generateToken(user.getEmail(), jwtExpirationTime, ISSUER, AUDIENCE, user.getRoles());
 
             // teste de parse token
             // Claims claims = jwtUtil.parseToken(token, ISSUER, AUDIENCE);
@@ -130,7 +130,7 @@ public class AuthController {
                 return ResponseEntity.ok("MFA_REQUIRED");
             }
 
-            String token = jwtUtil.generateToken(user.getEmail(), jwtExpirationTime, ISSUER, AUDIENCE);
+            String token = jwtUtil.generateToken(user.getEmail(), jwtExpirationTime, ISSUER, AUDIENCE, user.getRoles());
             logger.info("Login bem-sucedido para o usuário: {}", user.getEmail());
             return ResponseEntity.ok(token);
         } catch (Exception e) {
@@ -171,7 +171,7 @@ public class AuthController {
 
             var user = userOptional.get();
             if (userService.verifyMfa(user, code)) {
-                String token = jwtUtil.generateToken(user.getEmail(), jwtExpirationTime, ISSUER, AUDIENCE);
+                String token = jwtUtil.generateToken(user.getEmail(), jwtExpirationTime, ISSUER, AUDIENCE, user.getRoles());
                 logger.info("MFA verificado com sucesso para o usuário: {}", user.getEmail());
                 return ResponseEntity.ok(token);
             } else {

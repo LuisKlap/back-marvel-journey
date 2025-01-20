@@ -14,6 +14,7 @@ import org.mockito.MockitoAnnotations;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -35,21 +36,22 @@ class JwtUtilTest {
         when(keyManager.getActiveKey()).thenReturn(key);
     }
 
-    @Test
+        @Test
     void testGenerateToken() {
-        String token = jwtUtil.generateToken("testUser", 10000L, "issuer", "audience"); // Ajuste o tempo de expiração para 10 segundos
+        String token = jwtUtil.generateToken("testUser", 10000L, "issuer", "audience", List.of("ROLE_USER")); // Adicione a lista de roles
         assertNotNull(token);
-
+    
         Claims claims = Jwts.parserBuilder()
                 .setSigningKey(key)
                 .setAllowedClockSkewSeconds(60) // Adiciona tolerância de tempo de 60 segundos
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
-
+    
         assertEquals("testUser", claims.getSubject());
         assertEquals("issuer", claims.getIssuer());
         assertEquals("audience", claims.getAudience());
+        assertEquals(List.of("ROLE_USER"), claims.get("roles"));
     }
 
     @Test

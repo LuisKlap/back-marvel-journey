@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.security.Key;
 import java.util.Base64;
 import java.util.Date;
+import java.util.List;
 
 @Component
 public class JwtUtil {
@@ -27,7 +28,7 @@ public class JwtUtil {
     private static final Clock clock = DefaultClock.INSTANCE;
     private static final long ALLOWED_CLOCK_SKEW_MILLIS = 30000; // 30 segundos de tolerância
 
-    public String generateToken(String subject, long expirationTime, String issuer, String audience) {
+    public String generateToken(String subject, long expirationTime, String issuer, String audience, List<String> roles) {
         try {
             Key key = keyManager.getActiveKey();
             logger.info("Chave ativa na geração do token: {}", Base64.getEncoder().encodeToString(key.getEncoded()));
@@ -37,6 +38,7 @@ public class JwtUtil {
                     .setExpiration(new Date(clock.now().getTime() + expirationTime))
                     .setIssuer(issuer)
                     .setAudience(audience)
+                    .claim("roles", roles)
                     .signWith(key, SignatureAlgorithm.HS512)
                     .compact();
             logger.info("Token JWT gerado com sucesso para o sujeito: {}", subject);
