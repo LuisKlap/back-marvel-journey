@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 @SecurityRequirement(name = "bearerAuth")
 @Tag(name = "User", description = "APIs de usuário")
-@PreAuthorize("hasAuthority('ROLE_USER')")
 @RestController
 @RequestMapping("/user")
 public class UserController {
@@ -29,6 +28,7 @@ public class UserController {
     private UserService userService;
 
     @Operation(summary = "Obter perfil do usuário", description = "Retorna o perfil do usuário logado")
+    @PreAuthorize("hasAuthority('ROLE_USER')")
     @GetMapping("/profile")
     public ResponseEntity<?> getUserProfile(@AuthenticationPrincipal UserDetails userDetails) {
         if (userDetails == null) {

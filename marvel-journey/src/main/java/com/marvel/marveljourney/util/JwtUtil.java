@@ -28,7 +28,8 @@ public class JwtUtil {
     private static final Clock clock = DefaultClock.INSTANCE;
     private static final long ALLOWED_CLOCK_SKEW_MILLIS = 30000; // 30 segundos de tolerância
 
-    public String generateToken(String subject, long expirationTime, String issuer, String audience, List<String> roles) {
+    public String generateToken(String subject, long expirationTime, String issuer, String audience,
+            List<String> roles) {
         try {
             Key key = keyManager.getActiveKey();
             logger.info("Chave ativa na geração do token: {}", Base64.getEncoder().encodeToString(key.getEncoded()));
@@ -52,6 +53,7 @@ public class JwtUtil {
         public Claims parseToken(String token, String expectedIssuer, String expectedAudience) {
         Key key = keyManager.getActiveKey();
         logger.info("Chave ativa no parse do token: {}", Base64.getEncoder().encodeToString(key.getEncoded()));
+        logger.info("Iniciando o parsing do token JWT");
         try {
             Claims claims = Jwts.parserBuilder()
                     .setSigningKey(key)
@@ -59,6 +61,8 @@ public class JwtUtil {
                     .build()
                     .parseClaimsJws(token)
                     .getBody();
+    
+            logger.info("Token JWT parseado com sucesso. Claims: {}", claims);
     
             if (isIssuerAndAudienceValid(claims, expectedIssuer, expectedAudience)) {
                 logger.info("Token JWT válido para o sujeito: {}", claims.getSubject());
@@ -73,6 +77,8 @@ public class JwtUtil {
         } catch (Exception e) {
             logger.error("Erro inesperado ao analisar o token JWT", e);
             throw new RuntimeException("Erro inesperado ao analisar o token JWT", e);
+        } finally {
+            logger.info("Finalizando o parsing do token JWT");
         }
     }
 
