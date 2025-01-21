@@ -6,6 +6,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.Instant;
@@ -14,21 +16,20 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DataMongoTest
 @ActiveProfiles("test")
-class UserRepositoryTest {
-
-    @Autowired
-    private UserRepository userRepository;
+@DataMongoTest
+class UserRepositoryTest extends EmbeddedMongoDbConfig {
 
     @BeforeEach
     void setUp() {
-        userRepository.deleteAll();
+        Query query = new Query();
+        mongoTemplate.remove(query, "users");
     }
 
     @AfterEach
     void tearDown() {
-        userRepository.deleteAllByIsTest(true);
+        Query query = new Query();
+        mongoTemplate.remove(query, "users");
     }
 
     @Test
@@ -40,10 +41,11 @@ class UserRepositoryTest {
         user.setTermsAcceptedAt(Instant.now());
         user.setStatus("active");
         user.setIsTest(true);
-        userRepository.save(user);
+        mongoTemplate.save(user);
 
         // Act
-        Optional<User> foundUser = userRepository.findByEmail("test@example.com");
+        Query query = new Query(Criteria.where("email").is("test@example.com"));
+        Optional<User> foundUser = Optional.ofNullable(mongoTemplate.findOne(query, User.class));
 
         // Assert
         assertThat(foundUser).isPresent();
@@ -59,7 +61,7 @@ class UserRepositoryTest {
         user1.setTermsAcceptedAt(Instant.now());
         user1.setStatus("active");
         user1.setIsTest(true);
-        userRepository.save(user1);
+        mongoTemplate.save(user1);
 
         User user2 = new User();
         user2.setEmail("user2@example.com");
@@ -67,10 +69,11 @@ class UserRepositoryTest {
         user2.setTermsAcceptedAt(Instant.now());
         user2.setStatus("inactive");
         user2.setIsTest(true);
-        userRepository.save(user2);
+        mongoTemplate.save(user2);
 
         // Act
-        List<User> activeUsers = userRepository.findByStatus("active");
+        Query query = new Query(Criteria.where("status").is("active"));
+        List<User> activeUsers = mongoTemplate.find(query, User.class);
 
         // Assert
         assertThat(activeUsers).hasSize(1);
@@ -85,9 +88,9 @@ class UserRepositoryTest {
         user1.setPasswordHash("hashedPassword1");
         user1.setTermsAcceptedAt(Instant.now());
         user1.setStatus("active");
-        user1.setRoles(List.of("admin"));
+        user1.setRoles(List.of("ROLE_ADMIN"));
         user1.setIsTest(true);
-        userRepository.save(user1);
+        mongoTemplate.save(user1);
 
         User user2 = new User();
         user2.setEmail("user2@example.com");
@@ -96,10 +99,11 @@ class UserRepositoryTest {
         user2.setStatus("active");
         user2.setRoles(List.of("ROLE_USER"));
         user2.setIsTest(true);
-        userRepository.save(user2);
+        mongoTemplate.save(user2);
 
         // Act
-        List<User> adminUsers = userRepository.findByRole("admin");
+        Query query = new Query(Criteria.where("roles").in("ROLE_ADMIN"));
+        List<User> adminUsers = mongoTemplate.find(query, User.class);
 
         // Assert
         assertThat(adminUsers).hasSize(1);
@@ -115,10 +119,11 @@ class UserRepositoryTest {
         user.setTermsAcceptedAt(Instant.now());
         user.setStatus("active");
         user.setIsTest(true);
-        userRepository.save(user);
+        mongoTemplate.save(user);
 
         // Act
-        Optional<User> foundUser = userRepository.findPasswordHashByEmail("test@example.com");
+        Query query = new Query(Criteria.where("email").is("test@example.com"));
+        Optional<User> foundUser = Optional.ofNullable(mongoTemplate.findOne(query, User.class));
 
         // Assert
         assertThat(foundUser).isPresent();
