@@ -38,12 +38,7 @@ public class UserController {
 
         logger.debug("Iniciando getUserProfile para o usuário: {}", userDetails.getUsername());
         try {
-            User user = userService.findByEmail(userDetails.getUsername()).orElse(null);
-            if (user == null) {
-                logger.warn("Usuário não encontrado: {}", userDetails.getUsername());
-                return ResponseEntity.status(404).body("Usuário não encontrado.");
-            }
-            logger.debug("Usuário encontrado: {}", user);
+            User user = userService.findByEmail(userDetails.getUsername());
             return ResponseEntity.ok(user);
         } catch (Exception e) {
             logger.error("Erro ao obter perfil do usuário", e);

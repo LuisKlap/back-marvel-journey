@@ -1,5 +1,6 @@
 package com.marvel.marveljourney.service;
 
+import com.marvel.marveljourney.exception.UserNotFoundException;
 import com.marvel.marveljourney.model.User;
 import com.marvel.marveljourney.repository.UserRepository;
 import com.marvel.marveljourney.util.MfaUtil;
@@ -28,9 +29,9 @@ public class UserService {
     @Autowired
     private MfaUtil mfaUtil;
 
-    public Optional<User> findByEmail(String email) {
-        logger.debug("Procurando usuário por email: {}", email);
-        return userRepository.findByEmail(email);
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado com o email: " + email));
     }
 
     public User saveUser(User user) {
@@ -67,7 +68,8 @@ public class UserService {
 
     public void increaseFailedAttempts(User user) {
         user.setFailedLoginAttempts(user.getFailedLoginAttempts() + 1);
-        logger.warn("Aumentando tentativas falhas para o usuário: {}. Tentativas falhas: {}", user.getEmail(), user.getFailedLoginAttempts());
+        logger.warn("Aumentando tentativas falhas para o usuário: {}. Tentativas falhas: {}", user.getEmail(),
+                user.getFailedLoginAttempts());
         if (user.getFailedLoginAttempts() >= MAX_FAILED_ATTEMPTS) {
             user.setLockoutEndTime(Instant.now().plusMillis(LOCKOUT_DURATION));
             logger.warn("Usuário bloqueado devido a tentativas falhas: {}", user.getEmail());

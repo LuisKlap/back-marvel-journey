@@ -54,7 +54,9 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody RegisterRequest registerRequest) {
         try {
-            if (userService.findByEmail(registerRequest.getEmail()).isPresent()) {
+            User userExist = userService.findByEmail(registerRequest.getEmail());
+
+            if (userExist != null) {
                 logger.warn("Tentativa de registro com email já existente: {}", registerRequest.getEmail());
                 return ResponseEntity.badRequest().body("Email já registrado.");
             }
@@ -67,11 +69,12 @@ public class AuthController {
             }
 
             User user = new User();
+
             user.setEmail(registerRequest.getEmail());
             user.setPasswordHash(passwordEncoder.encode(registerRequest.getPassword()));
             user.setCreatedAt(Instant.now());
             user.setUpdatedAt(Instant.now());
-            user.setTermsAcceptedAt(Instant.now()); // Adicionando a propriedade termsAcceptedAt
+            user.setTermsAcceptedAt(Instant.now());
             user.setStatus("active");
             user.setRoles(List.of("ROLE_USER"));
             user.setLoginAttempts(new User.LoginAttempts());
@@ -79,21 +82,11 @@ public class AuthController {
             user.setIsTest(false);
 
             userService.saveUser(user);
-            logger.info("Novo usuário registrado: {}", user.getEmail());
 
             String token = jwtUtil.generateToken(user.getEmail(), jwtExpirationTime, ISSUER, AUDIENCE, user.getRoles());
 
-            // teste de parse token
-            // Claims claims = jwtUtil.parseToken(token, ISSUER, AUDIENCE);
-            // logger.info("Token válido para o usuário: {}", claims.getSubject());
-            // logger.info("Token emitido em: {}", claims.getIssuedAt());
-            // logger.info("Token expira em: {}", claims.getExpiration());
-            // logger.info("Token emitido por: {}", claims.getIssuer());
-            // logger.info("Token emitido para: {}", claims.getAudience());
-
             return ResponseEntity.ok(token);
         } catch (Exception e) {
-            logger.error("Erro ao registrar usuário", e);
             return ResponseEntity.status(500).body("Erro interno do servidor");
         }
     }
@@ -102,36 +95,35 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@RequestBody LoginRequest loginRequest) {
         try {
-            var userOptional = userService.findByEmail(loginRequest.getEmail());
+            User userOptional = userService.findByEmail(loginRequest.getEmail());
 
-            if (userOptional.isEmpty()) {
+            if (userOptional == null) {
                 logger.warn("Tentativa de login com email não registrado: {}", loginRequest.getEmail());
                 return ResponseEntity.status(401).body("Credenciais inválidas.");
             }
 
-            var user = userOptional.get();
-
-            if (userService.isAccountLocked(user)) {
+            if (userService.isAccountLocked(userOptional)) {
                 logger.warn("Tentativa de login com conta bloqueada: {}", loginRequest.getEmail());
                 return ResponseEntity.status(403).body("Conta bloqueada. Tente novamente mais tarde.");
             }
 
-            if (!userService.validatePassword(loginRequest.getPassword(), user.getPasswordHash())) {
-                userService.increaseFailedAttempts(user);
+            if (!userService.validatePassword(loginRequest.getPassword(), userOptional.getPasswordHash())) {
+                userService.increaseFailedAttempts(userOptional);
                 logger.warn("Tentativa de login com senha inválida para o email: {}", loginRequest.getEmail());
                 return ResponseEntity.status(401).body("Credenciais inválidas.");
             }
 
-            userService.resetFailedAttempts(user);
-            userService.updateMetadata(user, loginRequest.getIpAddress(), loginRequest.getUserAgent());
+            userService.resetFailedAttempts(userOptional);
+            userService.updateMetadata(userOptional, loginRequest.getIpAddress(), loginRequest.getUserAgent());
 
-            if (user.isMfaEnabled()) {
-                logger.info("Login bem-sucedido com MFA requerido para o usuário: {}", user.getEmail());
+            if (userOptional.isMfaEnabled()) {
+                logger.info("Login bem-sucedido com MFA requerido para o usuário: {}", userOptional.getEmail());
                 return ResponseEntity.ok("MFA_REQUIRED");
             }
 
-            String token = jwtUtil.generateToken(user.getEmail(), jwtExpirationTime, ISSUER, AUDIENCE, user.getRoles());
-            logger.info("Login bem-sucedido para o usuário: {}", user.getEmail());
+            String token = jwtUtil.generateToken(userOptional.getEmail(), jwtExpirationTime, ISSUER, AUDIENCE,
+                    userOptional.getRoles());
+            logger.info("Login bem-sucedido para o usuário: {}", userOptional.getEmail());
             return ResponseEntity.ok(token);
         } catch (Exception e) {
             logger.error("Erro ao fazer login", e);
@@ -143,15 +135,14 @@ public class AuthController {
     @PostMapping("/enable-mfa")
     public ResponseEntity<?> enableMfa(@RequestBody MfaRequest mfaRequest) {
         try {
-            var userOptional = userService.findByEmail(mfaRequest.getEmail());
-            if (userOptional.isEmpty()) {
+            User userOptional = userService.findByEmail(mfaRequest.getEmail());
+            if (userOptional == null) {
                 logger.warn("Tentativa de habilitar MFA para email não registrado: {}", mfaRequest.getEmail());
                 return ResponseEntity.status(404).body("Usuário não encontrado.");
             }
 
-            var user = userOptional.get();
-            String secret = userService.enableMfa(user);
-            logger.info("MFA habilitado para o usuário: {}", user.getEmail());
+            String secret = userService.enableMfa(userOptional);
+            logger.info("MFA habilitado para o usuário: {}", userOptional.getEmail());
             return ResponseEntity.ok(secret);
         } catch (Exception e) {
             logger.error("Erro ao habilitar MFA", e);
@@ -163,19 +154,19 @@ public class AuthController {
     @PostMapping("/verify-mfa")
     public ResponseEntity<?> verifyMfa(@RequestBody MfaRequest mfaRequest, @RequestParam int code) {
         try {
-            var userOptional = userService.findByEmail(mfaRequest.getEmail());
-            if (userOptional.isEmpty()) {
+            User userOptional = userService.findByEmail(mfaRequest.getEmail());
+            if (userOptional == null) {
                 logger.warn("Tentativa de verificação MFA para email não registrado: {}", mfaRequest.getEmail());
                 return ResponseEntity.status(404).body("Usuário não encontrado.");
             }
 
-            var user = userOptional.get();
-            if (userService.verifyMfa(user, code)) {
-                String token = jwtUtil.generateToken(user.getEmail(), jwtExpirationTime, ISSUER, AUDIENCE, user.getRoles());
-                logger.info("MFA verificado com sucesso para o usuário: {}", user.getEmail());
+            if (userService.verifyMfa(userOptional, code)) {
+                String token = jwtUtil.generateToken(userOptional.getEmail(), jwtExpirationTime, ISSUER, AUDIENCE,
+                        userOptional.getRoles());
+                logger.info("MFA verificado com sucesso para o usuário: {}", userOptional.getEmail());
                 return ResponseEntity.ok(token);
             } else {
-                logger.warn("Tentativa de verificação MFA falhou para o usuário: {}", user.getEmail());
+                logger.warn("Tentativa de verificação MFA falhou para o usuário: {}", userOptional.getEmail());
                 return ResponseEntity.status(401).body("Código MFA inválido.");
             }
         } catch (Exception e) {
