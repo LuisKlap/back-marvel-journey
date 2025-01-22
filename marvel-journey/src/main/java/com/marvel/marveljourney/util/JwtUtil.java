@@ -1,5 +1,6 @@
 package com.marvel.marveljourney.util;
 
+import com.marvel.marveljourney.exception.InvalidIssuerOrAudienceException;
 import com.marvel.marveljourney.security.KeyManager;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Clock;
@@ -69,7 +70,7 @@ public class JwtUtil {
                 return claims;
             } else {
                 logger.warn(ISSUER_AUDIENCE_MISMATCH);
-                throw new JwtException(ISSUER_AUDIENCE_MISMATCH);
+                throw new InvalidIssuerOrAudienceException(ISSUER_AUDIENCE_MISMATCH);
             }
         } catch (JwtException e) {
             logger.error("Erro ao analisar o token JWT", e);

@@ -41,10 +41,10 @@ class UserServiceTest {
         user.setEmail(email);
         when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
 
-        Optional<User> foundUser = userService.findByEmail(email);
+        User foundUser = userService.findByEmail(email);
 
-        assertTrue(foundUser.isPresent());
-        assertEquals(email, foundUser.get().getEmail());
+        assertNotNull(foundUser);
+        assertEquals(email, foundUser.getEmail());
     }
 
     @Test

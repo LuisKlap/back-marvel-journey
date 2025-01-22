@@ -41,7 +41,7 @@ class UserControllerTest {
         user.setRoles(List.of("ROLE_USER"));
 
         when(userDetails.getUsername()).thenReturn("test@example.com");
-        when(userService.findByEmail(anyString())).thenReturn(Optional.of(user));
+        when(userService.findByEmail(anyString())).thenReturn(user);
 
         ResponseEntity<?> response = userController.getUserProfile(userDetails);
 
@@ -53,7 +53,7 @@ class UserControllerTest {
     @Test
     void testGetUserProfile_UserNotFound() {
         when(userDetails.getUsername()).thenReturn("test@example.com");
-        when(userService.findByEmail(anyString())).thenReturn(Optional.empty());
+        when(userService.findByEmail(anyString())).thenReturn(null);
 
         ResponseEntity<?> response = userController.getUserProfile(userDetails);
 

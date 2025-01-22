@@ -50,7 +50,7 @@ class AuthControllerTest {
         registerRequest.setEmail("test@example.com");
         registerRequest.setPassword("StrongPassword123");
 
-        when(userService.findByEmail(anyString())).thenReturn(Optional.empty());
+        when(userService.findByEmail(anyString())).thenReturn(null);
         when(passwordValidatorUtil.validate(anyString())).thenReturn(true);
         when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
         when(jwtUtil.generateToken(anyString(), anyLong(), anyString(), anyString(), anyList())).thenReturn("jwtToken");
@@ -68,7 +68,7 @@ class AuthControllerTest {
         registerRequest.setEmail("test@example.com");
         registerRequest.setPassword("StrongPassword123");
 
-        when(userService.findByEmail(anyString())).thenReturn(Optional.of(new User()));
+        when(userService.findByEmail(anyString())).thenReturn(new User());
 
         ResponseEntity<?> response = authController.registerUser(registerRequest);
 
@@ -82,7 +82,7 @@ class AuthControllerTest {
         registerRequest.setEmail("test@example.com");
         registerRequest.setPassword("weak");
 
-        when(userService.findByEmail(anyString())).thenReturn(Optional.empty());
+        when(userService.findByEmail(anyString())).thenReturn(null);
         when(passwordValidatorUtil.validate(anyString())).thenReturn(false);
         when(passwordValidatorUtil.getMessages(anyString())).thenReturn(List.of("Password is too weak"));
 
@@ -104,7 +104,7 @@ class AuthControllerTest {
         user.setRoles(List.of("ROLE_USER"));
         user.setMfaEnabled(false);
     
-        when(userService.findByEmail(anyString())).thenReturn(Optional.of(user));
+        when(userService.findByEmail(anyString())).thenReturn(user);
         when(userService.validatePassword(anyString(), anyString())).thenReturn(true);
         when(jwtUtil.generateToken(anyString(), anyLong(), anyString(), anyString(), anyList())).thenReturn("jwtToken");
     
@@ -125,7 +125,7 @@ class AuthControllerTest {
         user.setEmail("test@example.com");
         user.setPasswordHash("encodedPassword");
 
-        when(userService.findByEmail(anyString())).thenReturn(Optional.of(user));
+        when(userService.findByEmail(anyString())).thenReturn(user);
         when(userService.validatePassword(anyString(), anyString())).thenReturn(false);
 
         ResponseEntity<?> response = authController.loginUser(loginRequest);
@@ -142,7 +142,7 @@ class AuthControllerTest {
         User user = new User();
         user.setEmail("test@example.com");
 
-        when(userService.findByEmail(anyString())).thenReturn(Optional.of(user));
+        when(userService.findByEmail(anyString())).thenReturn(user);
         when(userService.enableMfa(any(User.class))).thenReturn("secret");
 
         ResponseEntity<?> response = authController.enableMfa(mfaRequest);
@@ -160,7 +160,7 @@ class AuthControllerTest {
         user.setEmail("test@example.com");
         user.setRoles(List.of("ROLE_USER"));
     
-        when(userService.findByEmail(anyString())).thenReturn(Optional.of(user));
+        when(userService.findByEmail(anyString())).thenReturn(user);
         when(userService.verifyMfa(any(User.class), anyInt())).thenReturn(true);
         when(jwtUtil.generateToken(anyString(), anyLong(), anyString(), anyString(), anyList())).thenReturn("jwtToken");
     
@@ -179,7 +179,7 @@ class AuthControllerTest {
         User user = new User();
         user.setEmail("test@example.com");
 
-        when(userService.findByEmail(anyString())).thenReturn(Optional.of(user));
+        when(userService.findByEmail(anyString())).thenReturn(user);
         when(userService.verifyMfa(any(User.class), anyInt())).thenReturn(false);
 
         ResponseEntity<?> response = authController.verifyMfa(mfaRequest, 123456);
