@@ -1,12 +1,9 @@
 package com.marvel.marveljourney.util;
 
 import org.passay.*;
-import org.passay.dictionary.*;
-import org.passay.dictionary.sort.ArraysSort;
 import org.springframework.stereotype.Component;
 
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
