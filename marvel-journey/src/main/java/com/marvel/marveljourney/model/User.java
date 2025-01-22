@@ -26,12 +26,20 @@ public class User {
     private boolean mfaEnabled;
     private int failedLoginAttempts;
     private Instant lockoutEndTime;
+    private VerificationCode verificationCode;
     private boolean isTest;
 
     @Data
     public static class LoginAttempts {
         private int count;
         private Instant lastAttemptAt;
+    }
+
+    @Data
+    public static class VerificationCode {
+        private String email;
+        private String code;
+        private Instant createdAt;
     }
 
     @Data

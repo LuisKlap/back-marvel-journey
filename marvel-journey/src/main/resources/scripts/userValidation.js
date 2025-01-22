@@ -48,7 +48,8 @@ db.createCollection("users", {
                 roles: {
                     bsonType: "array",
                     items: {
-                        bsonType: "string"
+                        bsonType: "string",
+                        enum: ["ROLE_USER", "ROLE_ADMIN", "ROLE_MASTER"]
                     },
                     description: "Lista de papéis do usuário"
                 },
@@ -88,6 +89,23 @@ db.createCollection("users", {
                 isTest: {
                     bsonType: "bool",
                     description: "Indica se o registro é de teste"
+                },
+                verificationCode: {
+                    bsonType: "object",
+                    properties: {
+                        email: {
+                            bsonType: "string",
+                            description: "Email associado ao código de verificação"
+                        },
+                        code: {
+                            bsonType: "string",
+                            description: "Código de verificação"
+                        },
+                        createdAt: {
+                            bsonType: "date",
+                            description: "Data de criação do código de verificação"
+                        }
+                    }
                 }
             }
         }

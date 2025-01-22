@@ -2,8 +2,12 @@ package com.marvel.marveljourney.controller;
 
 import com.marvel.marveljourney.dto.LoginRequest;
 import com.marvel.marveljourney.dto.RegisterRequest;
+import com.marvel.marveljourney.dto.VerificationRequest;
 import com.marvel.marveljourney.dto.MfaRequest;
 import com.marvel.marveljourney.model.User;
+import com.marvel.marveljourney.model.User.VerificationCode;
+import com.marvel.marveljourney.security.VerificationCodeUtil;
+import com.marvel.marveljourney.service.EmailService;
 import com.marvel.marveljourney.service.UserService;
 import com.marvel.marveljourney.util.JwtUtil;
 import com.marvel.marveljourney.util.PasswordValidatorUtil;
@@ -42,6 +46,9 @@ public class AuthController {
     private JwtUtil jwtUtil;
 
     @Autowired
+    EmailService emailService;
+
+    @Autowired
     private PasswordValidatorUtil passwordValidatorUtil;
 
     @Value("${jwt.expiration.time}")
@@ -69,7 +76,6 @@ public class AuthController {
             }
 
             User user = new User();
-
             user.setEmail(registerRequest.getEmail());
             user.setPasswordHash(passwordEncoder.encode(registerRequest.getPassword()));
             user.setCreatedAt(Instant.now());
@@ -81,14 +87,43 @@ public class AuthController {
             user.setMetadata(new User.Metadata());
             user.setIsTest(false);
 
+            // Gerar e enviar código de verificação
+            String verificationCode = VerificationCodeUtil.generateCode();
+            logger.info("Código gerado {}", verificationCode);
+            emailService.sendVerificationEmail(user.getEmail(), verificationCode);
+            logger.info("Código de verificação enviado para o email: {}", user.getEmail());
+
+            // Salvar código de verificação no banco de dados
+            VerificationCode verification = new User.VerificationCode();
+            verification.setEmail(user.getEmail());
+            verification.setCode(verificationCode);
+            verification.setCreatedAt(Instant.now());
+            user.setVerificationCode(verification);
+
             userService.saveUser(user);
-
-            String token = jwtUtil.generateToken(user.getEmail(), jwtExpirationTime, ISSUER, AUDIENCE, user.getRoles());
-
-            return ResponseEntity.ok(token);
+            return ResponseEntity.ok("Registro bem-sucedido. Verifique seu email para o código de verificação.");
         } catch (Exception e) {
+            logger.error("Erro ao registrar usuário", e);
             return ResponseEntity.status(500).body("Erro interno do servidor");
         }
+    }
+
+    @Operation(summary = "Verificar código de verificação de email")
+    @PostMapping("/verify-email")
+    public ResponseEntity<?> verifyEmail(@RequestBody VerificationRequest verificationRequest) {
+        User userExist = userService.findByEmail(verificationRequest.getEmail());
+
+        if (userExist == null) {
+            return ResponseEntity.status(404).body("Usuário não encontrado.");
+        }
+
+        VerificationCode verificationCode = userExist.getVerificationCode();
+
+        if (verificationCode == null || !verificationCode.getCode().equals(verificationRequest.getCode())) {
+            return ResponseEntity.status(400).body("Código de verificação inválido.");
+        }
+
+        return ResponseEntity.ok("Email verificado com sucesso.");
     }
 
     @Operation(summary = "Login de um usuário")

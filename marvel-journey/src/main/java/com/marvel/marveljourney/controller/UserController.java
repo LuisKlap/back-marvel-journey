@@ -47,7 +47,6 @@ public class UserController {
             
             return ResponseEntity.ok(user);
         } catch (Exception e) {
-            logger.error("Erro ao obter perfil do usuário", e);
             return ResponseEntity.status(500).body("Erro interno do servidor");
         }
     }

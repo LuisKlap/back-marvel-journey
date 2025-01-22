@@ -1,26 +1,34 @@
 package com.marvel.marveljourney.controller;
 
+import com.marvel.marveljourney.config.TestConfig;
 import com.marvel.marveljourney.dto.LoginRequest;
 import com.marvel.marveljourney.dto.RegisterRequest;
 import com.marvel.marveljourney.dto.MfaRequest;
 import com.marvel.marveljourney.model.User;
+import com.marvel.marveljourney.service.EmailService;
 import com.marvel.marveljourney.service.UserService;
 import com.marvel.marveljourney.util.JwtUtil;
 import com.marvel.marveljourney.util.PasswordValidatorUtil;
+
+import jakarta.mail.MessagingException;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
+@SpringBootTest
+@Import(TestConfig.class)
 class AuthControllerTest {
 
     @Mock
@@ -35,6 +43,9 @@ class AuthControllerTest {
     @Mock
     private PasswordValidatorUtil passwordValidatorUtil;
 
+    @Mock
+    private EmailService emailService;
+
     @InjectMocks
     private AuthController authController;
 
@@ -44,21 +55,21 @@ class AuthControllerTest {
     }
 
     @Test
-    void testRegisterUser_Success() {
+    void testRegisterUser_Success() throws MessagingException {
         RegisterRequest registerRequest = new RegisterRequest(null, null);
         registerRequest.setEmail("test@example.com");
-        registerRequest.setPassword("StrongPassword123");
+        registerRequest.setPassword("Strong@Password123");
 
         when(userService.findByEmail(anyString())).thenReturn(null);
         when(passwordValidatorUtil.validate(anyString())).thenReturn(true);
         when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
-        when(jwtUtil.generateToken(anyString(), anyLong(), anyString(), anyString(), anyList())).thenReturn("jwtToken");
 
         ResponseEntity<?> response = authController.registerUser(registerRequest);
 
         assertEquals(200, response.getStatusCode().value());
-        assertEquals("jwtToken", response.getBody());
+        assertEquals("Registro bem-sucedido. Verifique seu email para o código de verificação.", response.getBody());
         verify(userService, times(1)).saveUser(any(User.class));
+        verify(emailService, times(1)).sendVerificationEmail(anyString(), anyString());
     }
 
     @Test
