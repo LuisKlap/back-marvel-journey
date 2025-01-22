@@ -1,6 +1,6 @@
 package com.marvel.marveljourney.util;
 
-import com.marvel.marveljourney.exception.InvalidIssuerOrAudienceException;
+import com.marvel.marveljourney.exception.JwtTokenException;
 import com.marvel.marveljourney.security.KeyManager;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Clock;
@@ -51,7 +51,7 @@ public class JwtUtil {
         }
     }
 
-        public Claims parseToken(String token, String expectedIssuer, String expectedAudience) {
+    public Claims parseToken(String token, String expectedIssuer, String expectedAudience) {
         Key key = keyManager.getActiveKey();
         logger.info("Chave ativa no parse do token: {}", Base64.getEncoder().encodeToString(key.getEncoded()));
         logger.info("Iniciando o parsing do token JWT");
@@ -62,22 +62,22 @@ public class JwtUtil {
                     .build()
                     .parseClaimsJws(token)
                     .getBody();
-    
+
             logger.info("Token JWT parseado com sucesso. Claims: {}", claims);
-    
+
             if (isIssuerAndAudienceValid(claims, expectedIssuer, expectedAudience)) {
                 logger.info("Token JWT válido para o sujeito: {}", claims.getSubject());
                 return claims;
             } else {
                 logger.warn(ISSUER_AUDIENCE_MISMATCH);
-                throw new InvalidIssuerOrAudienceException(ISSUER_AUDIENCE_MISMATCH);
+                throw new JwtException(ISSUER_AUDIENCE_MISMATCH);
             }
         } catch (JwtException e) {
-            logger.error("Erro ao analisar o token JWT", e);
-            throw e;
+            logger.error(ISSUER_AUDIENCE_MISMATCH);
+            throw new JwtException(ISSUER_AUDIENCE_MISMATCH);
         } catch (Exception e) {
-            logger.error("Erro inesperado ao analisar o token JWT", e);
-            throw new RuntimeException("Erro inesperado ao analisar o token JWT", e);
+            logger.error("Erro inesperado ao analisar o token JWT");
+            throw new JwtTokenException("Erro inesperado ao analisar o token JWT");
         } finally {
             logger.info("Finalizando o parsing do token JWT");
         }

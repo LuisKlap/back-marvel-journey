@@ -1,5 +1,6 @@
 package com.marvel.marveljourney.repository;
 
+import com.marvel.marveljourney.exception.CustomExceptionHandler;
 import com.mongodb.client.MongoClients;
 import de.flapdoodle.embed.mongo.MongodExecutable;
 import de.flapdoodle.embed.mongo.MongodStarter;
@@ -19,23 +20,33 @@ public abstract class EmbeddedMongoDbConfig {
     protected MongoTemplate mongoTemplate;
 
     @BeforeEach
-    void setup() throws Exception {
-        String ip = "localhost";
-        int port = 27017;
+    void setup() {
+        try {
+            String ip = "localhost";
+            int port = 27017;
 
-        ImmutableMongodConfig mongodConfig = MongodConfig.builder()
-                .version(Version.Main.PRODUCTION)
-                .net(new Net(ip, port, Network.localhostIsIPv6()))
-                .build();
+            ImmutableMongodConfig mongodConfig = MongodConfig.builder()
+                    .version(Version.Main.PRODUCTION)
+                    .net(new Net(ip, port, Network.localhostIsIPv6()))
+                    .build();
 
-        MongodStarter starter = MongodStarter.getDefaultInstance();
-        mongodExecutable = starter.prepare(mongodConfig);
-        mongodExecutable.start();
-        mongoTemplate = new MongoTemplate(MongoClients.create(String.format(CONNECTION_STRING, ip, port)), "testdb");
+            MongodStarter starter = MongodStarter.getDefaultInstance();
+            mongodExecutable = starter.prepare(mongodConfig);
+            mongodExecutable.start();
+            mongoTemplate = new MongoTemplate(MongoClients.create(String.format(CONNECTION_STRING, ip, port)), "testdb");
+        } catch (Exception e) {
+            CustomExceptionHandler.handleException(e);
+        }
     }
 
     @AfterEach
     void clean() {
-        mongodExecutable.stop();
+        try {
+            if (mongodExecutable != null) {
+                mongodExecutable.stop();
+            }
+        } catch (Exception e) {
+            CustomExceptionHandler.handleException(e);
+        }
     }
 }

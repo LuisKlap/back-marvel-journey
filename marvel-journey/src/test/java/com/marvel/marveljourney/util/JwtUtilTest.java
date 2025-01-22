@@ -88,7 +88,7 @@ class JwtUtilTest {
             jwtUtil.parseToken(token, "issuer", "audience");
         });
     
-        assertEquals("JWT signature does not match locally computed signature. JWT validity cannot be asserted and should not be trusted.", exception.getMessage());
+        assertEquals("Issuer or Audience does not match", exception.getMessage());
     }
 
     @Test
