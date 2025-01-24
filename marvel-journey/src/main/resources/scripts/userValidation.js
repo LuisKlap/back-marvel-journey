@@ -67,16 +67,28 @@ db.createCollection("users", {
                         userAgent: {
                             bsonType: "string",
                             description: "User agent do último login"
+                        },
+                        devices: {
+                            bsonType: "array",
+                            items: {
+                                bsonType: "string"
+                            },
+                            description: "Lista de dispositivos do usuário"
                         }
                     }
                 },
-                mfaSecret: {
-                    bsonType: "string",
-                    description: "Segredo do MFA"
-                },
-                mfaEnabled: {
-                    bsonType: "bool",
-                    description: "Indica se o MFA está habilitado"
+                mfa: {
+                    bsonType: "object",
+                    properties: {
+                        secret: {
+                            bsonType: "string",
+                            description: "Segredo do MFA"
+                        },
+                        enabled: {
+                            bsonType: "bool",
+                            description: "Indica se o MFA está habilitado"
+                        }
+                    }
                 },
                 failedLoginAttempts: {
                     bsonType: "int",
@@ -93,9 +105,9 @@ db.createCollection("users", {
                 verificationCode: {
                     bsonType: "object",
                     properties: {
-                        email: {
-                            bsonType: "string",
-                            description: "Email associado ao código de verificação"
+                        emailIsVerified: {
+                            bsonType: "bool",
+                            description: "Indica se o email foi verificado"
                         },
                         code: {
                             bsonType: "string",

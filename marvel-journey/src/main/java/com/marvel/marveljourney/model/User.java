@@ -22,17 +22,21 @@ public class User {
     private LoginAttempts loginAttempts;
     private List<String> roles;
     private Metadata metadata;
-    private String mfaSecret;
-    private boolean mfaEnabled;
+    private MfaData mfa;
     private int failedLoginAttempts;
     private Instant lockoutEndTime;
     private VerificationCode verificationCode;
-    private boolean isTest;
 
     @Data
     public static class LoginAttempts {
         private int count;
         private Instant lastAttemptAt;
+    }
+
+    @Data
+    public static class MfaData {
+        private String secret;
+        private boolean enabled;
     }
 
     @Data
@@ -47,13 +51,6 @@ public class User {
         private Instant lastLoginAt;
         private String ipAddress;
         private String userAgent;
-    }
-
-    public boolean getIsTest() {
-        return isTest;
-    }
-
-    public void setIsTest(boolean isTest) {
-        this.isTest = isTest;
+        private List<String> devices;
     }
 }

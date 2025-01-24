@@ -48,9 +48,9 @@
 			<version>1.6.0</version>
 		</dependency>
 		<dependency>
-			<groupId>com.warrenstrange</groupId>
-			<artifactId>googleauth</artifactId>
-			<version>1.4.0</version>
+			<groupId>dev.samstevens.totp</groupId>
+			<artifactId>totp</artifactId>
+			<version>1.7.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
