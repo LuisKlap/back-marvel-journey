@@ -2,7 +2,6 @@ package com.marvel.marveljourney.service;
 
 import com.marvel.marveljourney.model.User;
 import com.marvel.marveljourney.repository.UserRepository;
-import com.marvel.marveljourney.util.MfaUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,9 +23,6 @@ public class UserService {
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 
-    @Autowired
-    private MfaUtil mfaUtil;
-
     public User findByEmail(String email) {
         return userRepository.findByEmail(email).orElse(null);
     }
@@ -47,20 +43,6 @@ public class UserService {
     public boolean validatePassword(String rawPassword, String encodedPassword) {
         logger.debug("Validando senha para o usuário: {}", rawPassword);
         return passwordEncoder.matches(rawPassword, encodedPassword);
-    }
-
-    public String enableMfa(User user) {
-        String secret = mfaUtil.generateSecretKey();
-        user.setMfaSecret(secret);
-        user.setMfaEnabled(true);
-        updateUser(user);
-        logger.info("MFA habilitado para o usuário: {}", user.getEmail());
-        return secret;
-    }
-
-    public boolean verifyMfa(User user, int code) {
-        logger.debug("Verificando MFA para o usuário: {}", user.getEmail());
-        return mfaUtil.validateCode(user.getMfaSecret(), code);
     }
 
     public void increaseFailedAttempts(User user) {

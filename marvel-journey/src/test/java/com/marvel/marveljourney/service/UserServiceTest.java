@@ -2,7 +2,6 @@ package com.marvel.marveljourney.service;
 
 import com.marvel.marveljourney.model.User;
 import com.marvel.marveljourney.repository.UserRepository;
-import com.marvel.marveljourney.util.MfaUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -22,9 +21,6 @@ class UserServiceTest {
 
     @Mock
     private BCryptPasswordEncoder passwordEncoder;
-
-    @Mock
-    private MfaUtil mfaUtil;
 
     @InjectMocks
     private UserService userService;
@@ -83,33 +79,5 @@ class UserServiceTest {
 
         assertTrue(isValid);
         verify(passwordEncoder, times(1)).matches(rawPassword, encodedPassword);
-    }
-
-    @Test
-    void testEnableMfa() {
-        User user = new User();
-        user.setEmail("test@example.com");
-        String secret = "secret";
-        when(mfaUtil.generateSecretKey()).thenReturn(secret);
-
-        String returnedSecret = userService.enableMfa(user);
-
-        assertEquals(secret, returnedSecret);
-        assertTrue(user.isMfaEnabled());
-        assertEquals(secret, user.getMfaSecret());
-        verify(userRepository, times(1)).save(user);
-    }
-
-    @Test
-    void testVerifyMfa() {
-        User user = new User();
-        user.setMfaSecret("secret");
-        int code = 123456;
-        when(mfaUtil.validateCode("secret", code)).thenReturn(true);
-
-        boolean isValid = userService.verifyMfa(user, code);
-
-        assertTrue(isValid);
-        verify(mfaUtil, times(1)).validateCode("secret", code);
     }
 }

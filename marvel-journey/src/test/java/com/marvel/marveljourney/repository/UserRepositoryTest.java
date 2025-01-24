@@ -39,7 +39,6 @@ class UserRepositoryTest extends EmbeddedMongoDbConfig {
         user.setPasswordHash("hashedPassword");
         user.setTermsAcceptedAt(Instant.now());
         user.setStatus("active");
-        user.setIsTest(true);
         mongoTemplate.save(user);
 
         // Act
@@ -59,7 +58,6 @@ class UserRepositoryTest extends EmbeddedMongoDbConfig {
         user1.setPasswordHash("hashedPassword1");
         user1.setTermsAcceptedAt(Instant.now());
         user1.setStatus("active");
-        user1.setIsTest(true);
         mongoTemplate.save(user1);
 
         User user2 = new User();
@@ -67,7 +65,6 @@ class UserRepositoryTest extends EmbeddedMongoDbConfig {
         user2.setPasswordHash("hashedPassword2");
         user2.setTermsAcceptedAt(Instant.now());
         user2.setStatus("inactive");
-        user2.setIsTest(true);
         mongoTemplate.save(user2);
 
         // Act
@@ -88,7 +85,6 @@ class UserRepositoryTest extends EmbeddedMongoDbConfig {
         user1.setTermsAcceptedAt(Instant.now());
         user1.setStatus("active");
         user1.setRoles(List.of("ROLE_ADMIN"));
-        user1.setIsTest(true);
         mongoTemplate.save(user1);
 
         User user2 = new User();
@@ -97,7 +93,6 @@ class UserRepositoryTest extends EmbeddedMongoDbConfig {
         user2.setTermsAcceptedAt(Instant.now());
         user2.setStatus("active");
         user2.setRoles(List.of("ROLE_USER"));
-        user2.setIsTest(true);
         mongoTemplate.save(user2);
 
         // Act
@@ -117,7 +112,6 @@ class UserRepositoryTest extends EmbeddedMongoDbConfig {
         user.setPasswordHash("hashedPassword");
         user.setTermsAcceptedAt(Instant.now());
         user.setStatus("active");
-        user.setIsTest(true);
         mongoTemplate.save(user);
 
         // Act

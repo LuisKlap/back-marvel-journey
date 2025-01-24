@@ -3,7 +3,6 @@ package com.marvel.marveljourney.controller;
 import com.marvel.marveljourney.dto.LoginRequest;
 import com.marvel.marveljourney.dto.RegisterRequest;
 import com.marvel.marveljourney.dto.VerificationRequest;
-import com.marvel.marveljourney.dto.MfaRequest;
 import com.marvel.marveljourney.model.User;
 import com.marvel.marveljourney.model.User.VerificationCode;
 import com.marvel.marveljourney.security.VerificationCodeUtil;
@@ -85,7 +84,6 @@ public class AuthController {
             user.setRoles(List.of("ROLE_USER"));
             user.setLoginAttempts(new User.LoginAttempts());
             user.setMetadata(new User.Metadata());
-            user.setIsTest(false);
 
             // Gerar e enviar código de verificação
             String verificationCode = VerificationCodeUtil.generateCode();
@@ -158,61 +156,12 @@ public class AuthController {
             userService.resetFailedAttempts(userOptional);
             userService.updateMetadata(userOptional, loginRequest.getIpAddress(), loginRequest.getUserAgent());
 
-            if (userOptional.isMfaEnabled()) {
-                logger.info("Login bem-sucedido com MFA requerido para o usuário: {}", userOptional.getEmail());
-                return ResponseEntity.ok("MFA_REQUIRED");
-            }
-
             String token = jwtUtil.generateToken(userOptional.getEmail(), jwtExpirationTime, ISSUER, AUDIENCE,
                     userOptional.getRoles());
             logger.info("Login bem-sucedido para o usuário: {}", userOptional.getEmail());
             return ResponseEntity.ok(token);
         } catch (Exception e) {
             logger.error("Erro ao fazer login", e);
-            return ResponseEntity.status(500).body("Erro interno do servidor");
-        }
-    }
-
-    @Operation(summary = "Habilitar MFA para um usuário")
-    @PostMapping("/enable-mfa")
-    public ResponseEntity<?> enableMfa(@RequestBody MfaRequest mfaRequest) {
-        try {
-            User userOptional = userService.findByEmail(mfaRequest.getEmail());
-            if (userOptional == null) {
-                logger.warn("Tentativa de habilitar MFA para email não registrado: {}", mfaRequest.getEmail());
-                return ResponseEntity.status(404).body("Usuário não encontrado.");
-            }
-
-            String secret = userService.enableMfa(userOptional);
-            logger.info("MFA habilitado para o usuário: {}", userOptional.getEmail());
-            return ResponseEntity.ok(secret);
-        } catch (Exception e) {
-            logger.error("Erro ao habilitar MFA", e);
-            return ResponseEntity.status(500).body("Erro interno do servidor");
-        }
-    }
-
-    @Operation(summary = "Verificar MFA para um usuário")
-    @PostMapping("/verify-mfa")
-    public ResponseEntity<?> verifyMfa(@RequestBody MfaRequest mfaRequest, @RequestParam int code) {
-        try {
-            User userOptional = userService.findByEmail(mfaRequest.getEmail());
-            if (userOptional == null) {
-                logger.warn("Tentativa de verificação MFA para email não registrado: {}", mfaRequest.getEmail());
-                return ResponseEntity.status(404).body("Usuário não encontrado.");
-            }
-
-            if (userService.verifyMfa(userOptional, code)) {
-                String token = jwtUtil.generateToken(userOptional.getEmail(), jwtExpirationTime, ISSUER, AUDIENCE,
-                        userOptional.getRoles());
-                logger.info("MFA verificado com sucesso para o usuário: {}", userOptional.getEmail());
-                return ResponseEntity.ok(token);
-            } else {
-                logger.warn("Tentativa de verificação MFA falhou para o usuário: {}", userOptional.getEmail());
-                return ResponseEntity.status(401).body("Código MFA inválido.");
-            }
-        } catch (Exception e) {
-            logger.error("Erro ao verificar MFA", e);
             return ResponseEntity.status(500).body("Erro interno do servidor");
         }
     }
