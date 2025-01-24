@@ -122,7 +122,7 @@ public class AuthController {
         if (verificationCode == null || !verificationCode.getCode().equals(verificationRequest.getCode())) {
             return ResponseEntity.status(400).body("Código de verificação inválido.");
         }
-        
+
         userService.verifyEmail(verificationRequest.getEmail());
         return ResponseEntity.ok("Email verificado com sucesso.");
     }
@@ -147,6 +147,12 @@ public class AuthController {
                 userService.increaseFailedAttempts(userOptional);
                 logger.warn("Tentativa de login com senha inválida para o email: {}", loginRequest.getEmail());
                 return ResponseEntity.status(401).body("Credenciais inválidas.");
+            }
+
+            if (userService.emailIsVerified(userOptional.getEmail()) == false) {
+                logger.warn("Tentativa de login com email não verificado: {}", loginRequest.getEmail());
+                return ResponseEntity.status(403)
+                        .body("Email não verificado. Verifique seu email antes de fazer login.");
             }
 
             userService.resetFailedAttempts(userOptional);

@@ -68,4 +68,15 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
             }
         }
     }
+
+    @Override
+    public boolean emailIsVerified(String email) {
+        logger.debug("Verificando se o email do usuário está verificado: {}", email);
+        Query query = new Query(Criteria.where("email").is(email));
+        User user = mongoTemplate.findOne(query, User.class);
+        if (user != null) {
+            return user.getVerificationCode().isEmailIsVerified();
+        }
+        return false;
+    }
 }

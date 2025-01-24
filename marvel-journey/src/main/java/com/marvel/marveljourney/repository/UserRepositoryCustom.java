@@ -12,4 +12,5 @@ public interface UserRepositoryCustom {
     Optional<User> findPasswordHashByEmail(String email);
     void deleteAllByIsTest(boolean isTest);
     void verifyEmail(String email);
+    boolean emailIsVerified(String email);
 }

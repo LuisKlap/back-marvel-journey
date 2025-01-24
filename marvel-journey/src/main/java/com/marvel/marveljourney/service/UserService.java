@@ -126,4 +126,8 @@ public class UserService {
     public void verifyEmail(String email) {
         userRepository.verifyEmail(email);
     }
+
+    public boolean emailIsVerified(String email) {
+        return userRepository.emailIsVerified(email);
+    }
 }

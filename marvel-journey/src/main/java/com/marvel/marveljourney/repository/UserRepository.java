@@ -15,4 +15,5 @@ public interface UserRepository extends MongoRepository<User, String>, UserRepos
     Optional<User> findPasswordHashByEmail(String email);
     void deleteAllByIsTest(boolean isTest);
     void verifyEmail(String email);
+    boolean emailIsVerified(String email);
 }
