@@ -11,4 +11,5 @@ public interface UserRepositoryCustom {
     List<User> findByRole(String role);
     Optional<User> findPasswordHashByEmail(String email);
     void deleteAllByIsTest(boolean isTest);
+    void verifyEmail(String email);
 }

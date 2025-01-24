@@ -1,6 +1,6 @@
 package com.marvel.marveljourney.controller;
 
-import com.marvel.marveljourney.config.TestConfig;
+import com.marvel.marveljourney.config.EmailConfig;
 import com.marvel.marveljourney.dto.LoginRequest;
 import com.marvel.marveljourney.dto.RegisterRequest;
 import com.marvel.marveljourney.dto.MfaRequest;
@@ -25,10 +25,16 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @SpringBootTest
-@Import(TestConfig.class)
+@Import(EmailConfig.class)
 class AuthControllerTest {
 
     @Mock

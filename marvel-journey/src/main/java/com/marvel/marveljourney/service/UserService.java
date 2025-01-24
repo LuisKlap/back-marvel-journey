@@ -1,6 +1,5 @@
 package com.marvel.marveljourney.service;
 
-import com.marvel.marveljourney.exception.UserNotFoundException;
 import com.marvel.marveljourney.model.User;
 import com.marvel.marveljourney.repository.UserRepository;
 import com.marvel.marveljourney.util.MfaUtil;
@@ -29,8 +28,7 @@ public class UserService {
     private MfaUtil mfaUtil;
 
     public User findByEmail(String email) {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado com o email: " + email));
+        return userRepository.findByEmail(email).orElse(null);
     }
 
     public User saveUser(User user) {
@@ -123,5 +121,9 @@ public class UserService {
         user.getMetadata().setUserAgent(userAgent);
         logger.info("Atualizando metadata para o usuário: {}", user.getEmail());
         updateUser(user);
+    }
+
+    public void verifyEmail(String email) {
+        userRepository.verifyEmail(email);
     }
 }

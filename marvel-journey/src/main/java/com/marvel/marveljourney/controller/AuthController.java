@@ -95,7 +95,7 @@ public class AuthController {
 
             // Salvar código de verificação no banco de dados
             VerificationCode verification = new User.VerificationCode();
-            verification.setEmail(user.getEmail());
+            verification.setEmailIsVerified(false);
             verification.setCode(verificationCode);
             verification.setCreatedAt(Instant.now());
             user.setVerificationCode(verification);
@@ -122,7 +122,8 @@ public class AuthController {
         if (verificationCode == null || !verificationCode.getCode().equals(verificationRequest.getCode())) {
             return ResponseEntity.status(400).body("Código de verificação inválido.");
         }
-
+        
+        userService.verifyEmail(verificationRequest.getEmail());
         return ResponseEntity.ok("Email verificado com sucesso.");
     }
 

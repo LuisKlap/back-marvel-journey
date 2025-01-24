@@ -53,4 +53,19 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
         Query query = new Query(Criteria.where("isTest").is(isTest));
         mongoTemplate.remove(query, User.class);
     }
+
+    @Override
+    public void verifyEmail(String email) {
+        logger.debug("Verificando email do usuário: {}", email);
+        Query query = new Query(Criteria.where("email").is(email));
+        User user = mongoTemplate.findOne(query, User.class);
+        if (user != null) {
+            if (user.getVerificationCode().isEmailIsVerified() == true) {
+                throw new RuntimeException("Email is verified already");
+            } else {
+                user.getVerificationCode().setEmailIsVerified(true);
+                mongoTemplate.save(user);
+            }
+        }
+    }
 }

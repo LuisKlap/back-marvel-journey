@@ -37,7 +37,7 @@ public class User {
 
     @Data
     public static class VerificationCode {
-        private String email;
+        private boolean emailIsVerified;
         private String code;
         private Instant createdAt;
     }

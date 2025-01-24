@@ -23,7 +23,7 @@ public class SecurityConfig {
     private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
 
     private static final String[] PUBLIC_URLS = {
-            "/auth/parse-token", "/auth/register", "/auth/login", "/v3/api-docs/**", "/swagger-ui/**",
+            "/auth/**", "/v3/api-docs/**", "/swagger-ui/**",
             "/swagger-ui.html"
     };
 
