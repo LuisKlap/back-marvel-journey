@@ -14,6 +14,8 @@ public class User {
     private String id;
     private String email;
     private String passwordHash;
+    private String refreshTokenHash;
+    private Instant refreshTokenExpiryDate;
     private Instant termsAcceptedAt;
     private Boolean newsletterConsent;
     private Instant createdAt;

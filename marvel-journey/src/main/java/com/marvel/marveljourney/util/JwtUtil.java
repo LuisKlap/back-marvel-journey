@@ -1,6 +1,7 @@
 package com.marvel.marveljourney.util;
 
 import com.marvel.marveljourney.exception.JwtTokenException;
+import com.marvel.marveljourney.model.User;
 import com.marvel.marveljourney.security.KeyManager;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Clock;
@@ -14,9 +15,11 @@ import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.security.Key;
+import java.time.Instant;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 @Component
 public class JwtUtil {
@@ -43,18 +46,21 @@ public class JwtUtil {
                     .claim("roles", roles)
                     .signWith(key, SignatureAlgorithm.HS512)
                     .compact();
-            logger.info("Token JWT gerado com sucesso para o sujeito: {}", subject);
             return token;
         } catch (Exception e) {
-            logger.error("Erro ao gerar token JWT para o sujeito: {}", subject, e);
             throw new RuntimeException("Erro ao gerar token JWT", e);
         }
     }
 
+    public String generateRefreshToken(User user, long refreshTokenDurationMs) {
+        String refreshToken = UUID.randomUUID().toString();
+        user.setRefreshTokenHash(refreshToken);
+        user.setRefreshTokenExpiryDate(Instant.now().plusMillis(refreshTokenDurationMs));
+        return refreshToken;
+    }
+
     public Claims parseToken(String token, String expectedIssuer, String expectedAudience) {
         Key key = keyManager.getActiveKey();
-        logger.info("Chave ativa no parse do token: {}", Base64.getEncoder().encodeToString(key.getEncoded()));
-        logger.info("Iniciando o parsing do token JWT");
         try {
             Claims claims = Jwts.parserBuilder()
                     .setSigningKey(key)
@@ -63,10 +69,7 @@ public class JwtUtil {
                     .parseClaimsJws(token)
                     .getBody();
 
-            logger.info("Token JWT parseado com sucesso. Claims: {}", claims);
-
             if (isIssuerAndAudienceValid(claims, expectedIssuer, expectedAudience)) {
-                logger.info("Token JWT válido para o sujeito: {}", claims.getSubject());
                 return claims;
             } else {
                 logger.warn(ISSUER_AUDIENCE_MISMATCH);

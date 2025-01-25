@@ -10,7 +10,7 @@ public interface UserRepositoryCustom {
     List<User> findByStatus(String status);
     List<User> findByRole(String role);
     Optional<User> findPasswordHashByEmail(String email);
-    void deleteAllByIsTest(boolean isTest);
     void verifyEmail(String email);
     boolean emailIsVerified(String email);
+    User findByRefreshTokenHash(String refreshTokenHash);
 }

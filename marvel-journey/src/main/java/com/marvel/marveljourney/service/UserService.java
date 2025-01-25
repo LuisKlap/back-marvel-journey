@@ -9,6 +9,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.List;
 
 @Service
 public class UserService {
@@ -122,5 +123,15 @@ public class UserService {
     public String getUserSecret(String email) {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
         return user.getMfa().getSecret();
+    }
+
+    public User findByRefreshToken(String refreshToken) {
+        List<User> users = userRepository.findAll();
+        for (User user : users) {
+            if (passwordEncoder.matches(refreshToken, user.getRefreshTokenHash())) {
+                return user;
+            }
+        }
+        return null;
     }
 }

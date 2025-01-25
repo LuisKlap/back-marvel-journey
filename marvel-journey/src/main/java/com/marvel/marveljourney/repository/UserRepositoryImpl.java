@@ -48,13 +48,6 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
     }
 
     @Override
-    public void deleteAllByIsTest(boolean isTest) {
-        logger.debug("Deletando todos os usuários de teste: {}", isTest);
-        Query query = new Query(Criteria.where("isTest").is(isTest));
-        mongoTemplate.remove(query, User.class);
-    }
-
-    @Override
     public void verifyEmail(String email) {
         logger.debug("Verificando email do usuário: {}", email);
         Query query = new Query(Criteria.where("email").is(email));
@@ -78,5 +71,12 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
             return user.getVerificationCode().isEmailIsVerified();
         }
         return false;
+    }
+
+    @Override
+    public User findByRefreshTokenHash(String refreshTokenHash) {
+        logger.debug("Procurando usuário por refreshTokenHash: {}", refreshTokenHash);
+        Query query = new Query(Criteria.where("refreshTokenHash").is(refreshTokenHash));
+        return mongoTemplate.findOne(query, User.class);
     }
 }

@@ -5,7 +5,6 @@ import dev.samstevens.totp.secret.SecretGenerator;
 import dev.samstevens.totp.qr.QrData;
 import dev.samstevens.totp.qr.ZxingPngQrGenerator;
 import dev.samstevens.totp.qr.QrGenerator;
-import dev.samstevens.totp.util.Utils;
 import dev.samstevens.totp.code.DefaultCodeVerifier;
 import dev.samstevens.totp.code.DefaultCodeGenerator;
 import dev.samstevens.totp.time.SystemTimeProvider;

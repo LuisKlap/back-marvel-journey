@@ -11,12 +11,11 @@ import com.marvel.marveljourney.security.VerificationCodeUtil;
 import com.marvel.marveljourney.service.EmailService;
 import com.marvel.marveljourney.service.UserService;
 import com.marvel.marveljourney.service.TwoFactorAuthService;
+import com.marvel.marveljourney.service.RefreshTokenService;
 import com.marvel.marveljourney.util.JwtUtil;
 import com.marvel.marveljourney.util.PasswordValidatorUtil;
 
 import dev.samstevens.totp.exceptions.QrGenerationException;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
@@ -24,7 +23,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -58,6 +56,12 @@ public class AuthController {
 
     @Autowired
     private TwoFactorAuthService twoFactorAuthService;
+
+    @Autowired
+    private RefreshTokenService refreshTokenService;
+
+    @Value("${jwt.refresh.expiration.time}")
+    private long refreshTokenDurationMs;
 
     @Value("${jwt.expiration.time}")
     private long jwtExpirationTime;
@@ -98,13 +102,10 @@ public class AuthController {
             mfaData.setSecret(null);
             mfaData.setEnabled(false);
             user.setMfa(mfaData);
-            
 
-            // Gerar e enviar código de verificação
             String verificationCode = VerificationCodeUtil.generateCode();
             emailService.sendVerificationEmail(user.getEmail(), verificationCode);
 
-            // Salvar código de verificação no banco de dados
             VerificationCode verification = new User.VerificationCode();
             verification.setEmailIsVerified(false);
             verification.setCode(verificationCode);
@@ -171,23 +172,36 @@ public class AuthController {
 
             String token = jwtUtil.generateToken(userOptional.getEmail(), jwtExpirationTime, ISSUER, AUDIENCE,
                     userOptional.getRoles());
+            String refreshToken = refreshTokenService.generateRefreshToken(userOptional, refreshTokenDurationMs);
             logger.info("Login bem-sucedido para o usuário: {}", userOptional.getEmail());
-            return ResponseEntity.ok(token);
+
+            return ResponseEntity.ok(Map.of("token", token, "refreshToken", refreshToken));
         } catch (Exception e) {
             logger.error("Erro ao fazer login", e);
             return ResponseEntity.status(500).body("Erro interno do servidor");
         }
     }
 
-    @Operation(summary = "Verificar token JWT")
-    @PostMapping("/parse-token")
-    public ResponseEntity<?> parseToken(@RequestBody Map<String, String> request) {
-        String token = request.get("token");
+    @Operation(summary = "Renovar o JWT com base no refresh token")
+    @PostMapping("/refresh-token")
+    public ResponseEntity<?> refreshToken(@RequestBody Map<String, String> request) {
+        String refreshToken = request.get("refreshToken");
+        if (refreshToken == null || refreshToken.isEmpty()) {
+            return ResponseEntity.status(400).body("Refresh token é obrigatório.");
+        }
+
         try {
-            Claims claims = jwtUtil.parseToken(token, ISSUER, AUDIENCE);
-            return ResponseEntity.ok(claims);
-        } catch (JwtException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido");
+            User user = userService.findByRefreshToken(refreshToken);
+            if (user == null || user.getRefreshTokenExpiryDate().isBefore(Instant.now())) {
+                return ResponseEntity.status(401).body("Refresh token inválido ou expirado.");
+            }
+
+            String token = jwtUtil.generateToken(user.getEmail(), jwtExpirationTime, ISSUER, AUDIENCE, user.getRoles());
+            String newRefreshToken = refreshTokenService.generateRefreshToken(user, refreshTokenDurationMs);
+            return ResponseEntity.ok(Map.of("token", token, "refreshToken", newRefreshToken));
+        } catch (Exception e) {
+            logger.error("Erro ao renovar o token", e);
+            return ResponseEntity.status(500).body("Erro interno do servidor");
         }
     }
 

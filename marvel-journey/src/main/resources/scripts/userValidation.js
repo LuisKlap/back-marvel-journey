@@ -12,6 +12,14 @@ db.createCollection("users", {
                     bsonType: "string",
                     description: "Hash da senha"
                 },
+                refreshTokenHash: {
+                    bsonType: "string",
+                    description: "Hash do token de atualização"
+                },
+                refreshTokenExpiryDate: {
+                    bsonType: "date",
+                    description: "Data de expiração do token de atualização"
+                },
                 termsAcceptedAt: {
                     bsonType: "date",
                     description: "Data de aceitação dos termos"
