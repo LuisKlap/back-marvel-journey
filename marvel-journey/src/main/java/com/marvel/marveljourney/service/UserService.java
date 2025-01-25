@@ -134,4 +134,16 @@ public class UserService {
         }
         return null;
     }
+
+    public void logoutUser(String token) {
+        User user = findByRefreshToken(token);
+        if (user != null) {
+            user.setRefreshTokenHash(null);
+            user.setRefreshTokenExpiryDate(null);
+            userRepository.save(user);
+            logger.info("Logout bem-sucedido para o usuário: {}", user.getEmail());
+        } else {
+            throw new RuntimeException("Usuário não encontrado");
+        }
+    }
 }

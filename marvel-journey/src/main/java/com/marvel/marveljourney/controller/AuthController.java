@@ -234,4 +234,17 @@ public class AuthController {
             return ResponseEntity.status(400).body("Código inválido");
         }
     }
+
+    @Operation(summary = "Logout do usuário")
+    @PostMapping("/logout")
+    public ResponseEntity<?> logoutUser(@RequestBody Map<String, String> request) {
+        try {
+            String refreshToken = request.get("refreshToken");
+            userService.logoutUser(refreshToken);
+            return ResponseEntity.ok("Logout bem-sucedido.");
+        } catch (Exception e) {
+            logger.error("Erro ao fazer logout", e);
+            return ResponseEntity.status(500).body("Erro interno do servidor");
+        }
+    }
 }
