@@ -112,4 +112,15 @@ public class UserService {
     public boolean emailIsVerified(String email) {
         return userRepository.emailIsVerified(email);
     }
+
+    public void saveUserSecret(String email, String secret) {
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+        user.getMfa().setSecret(secret);
+        userRepository.save(user);
+    }
+
+    public String getUserSecret(String email) {
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+        return user.getMfa().getSecret();
+    }
 }

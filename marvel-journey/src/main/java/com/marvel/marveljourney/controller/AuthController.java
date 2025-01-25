@@ -3,14 +3,18 @@ package com.marvel.marveljourney.controller;
 import com.marvel.marveljourney.dto.LoginRequest;
 import com.marvel.marveljourney.dto.RegisterRequest;
 import com.marvel.marveljourney.dto.VerificationRequest;
+import com.marvel.marveljourney.dto.MfaRequest;
 import com.marvel.marveljourney.model.User;
+import com.marvel.marveljourney.model.User.MfaData;
 import com.marvel.marveljourney.model.User.VerificationCode;
 import com.marvel.marveljourney.security.VerificationCodeUtil;
 import com.marvel.marveljourney.service.EmailService;
 import com.marvel.marveljourney.service.UserService;
+import com.marvel.marveljourney.service.TwoFactorAuthService;
 import com.marvel.marveljourney.util.JwtUtil;
 import com.marvel.marveljourney.util.PasswordValidatorUtil;
 
+import dev.samstevens.totp.exceptions.QrGenerationException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,7 +23,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -49,6 +55,9 @@ public class AuthController {
 
     @Autowired
     private PasswordValidatorUtil passwordValidatorUtil;
+
+    @Autowired
+    private TwoFactorAuthService twoFactorAuthService;
 
     @Value("${jwt.expiration.time}")
     private long jwtExpirationTime;
@@ -85,11 +94,15 @@ public class AuthController {
             user.setLoginAttempts(new User.LoginAttempts());
             user.setMetadata(new User.Metadata());
 
+            MfaData mfaData = new MfaData();
+            mfaData.setSecret(null);
+            mfaData.setEnabled(false);
+            user.setMfa(mfaData);
+            
+
             // Gerar e enviar código de verificação
             String verificationCode = VerificationCodeUtil.generateCode();
-            logger.info("Código gerado {}", verificationCode);
             emailService.sendVerificationEmail(user.getEmail(), verificationCode);
-            logger.info("Código de verificação enviado para o email: {}", user.getEmail());
 
             // Salvar código de verificação no banco de dados
             VerificationCode verification = new User.VerificationCode();
@@ -166,6 +179,7 @@ public class AuthController {
         }
     }
 
+    @Operation(summary = "Verificar token JWT")
     @PostMapping("/parse-token")
     public ResponseEntity<?> parseToken(@RequestBody Map<String, String> request) {
         String token = request.get("token");
@@ -174,6 +188,36 @@ public class AuthController {
             return ResponseEntity.ok(claims);
         } catch (JwtException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido");
+        }
+    }
+
+    @Operation(summary = "Configurar autenticação de dois fatores")
+    @PostMapping("/setup-2fa")
+    public ResponseEntity<byte[]> setup2FA(@RequestBody MfaRequest mfaRequest) {
+        String email = mfaRequest.getEmail();
+        String secret = twoFactorAuthService.generateSecret();
+        userService.saveUserSecret(email, secret);
+        try {
+            byte[] qrCodeImage = twoFactorAuthService.generateQrCodeImage(secret, email);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.IMAGE_PNG);
+            return ResponseEntity.ok().headers(headers).body(qrCodeImage);
+        } catch (QrGenerationException e) {
+            return ResponseEntity.status(500).body(null);
+        }
+    }
+
+    @Operation(summary = "Verificar código de autenticação de dois fatores")
+    @PostMapping("/verify-2fa")
+    public ResponseEntity<?> verify2FA(@RequestBody VerificationRequest verificationRequest) {
+        String email = verificationRequest.getEmail();
+        String code = verificationRequest.getCode();
+        String secret = userService.getUserSecret(email);
+        boolean isValid = twoFactorAuthService.verifyCode(secret, code);
+        if (isValid) {
+            return ResponseEntity.ok("Código verificado com sucesso");
+        } else {
+            return ResponseEntity.status(400).body("Código inválido");
         }
     }
 }
