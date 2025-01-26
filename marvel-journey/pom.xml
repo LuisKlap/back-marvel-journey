@@ -201,6 +201,10 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>3.5.2</version>
 				<configuration>
+					<redirectTestOutputToFile>true</redirectTestOutputToFile>
+					<trimStackTrace>true</trimStackTrace>
+					<printSummary>true</printSummary>
+					<reportFormat>brief</reportFormat>
 					<includes>
 						<include>**/*Test.java</include>
 						<argLine>-Xmx1024m -XX:MaxPermSize=256m</argLine>
