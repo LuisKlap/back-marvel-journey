@@ -9,6 +9,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -97,11 +98,13 @@ public class UserService {
 
     public void updateMetadata(User user, String ipAddress, String userAgent) {
         if (user.getMetadata() == null) {
-            user.setMetadata(new User.Metadata());
+            user.setMetadata(new ArrayList<>());
         }
-        user.getMetadata().setLastLoginAt(Instant.now());
-        user.getMetadata().setIpAddress(ipAddress);
-        user.getMetadata().setUserAgent(userAgent);
+        User.Metadata metadata = new User.Metadata();
+        metadata.setLastLoginAt(Instant.now());
+        metadata.setIpAddress(ipAddress);
+        metadata.setUserAgent(userAgent);
+        user.getMetadata().add(metadata);
         logger.info("Atualizando metadata para o usuário: {}", user.getEmail());
         updateUser(user);
     }
@@ -124,22 +127,31 @@ public class UserService {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
         return user.getMfa().getSecret();
     }
-
-    public User findByRefreshToken(String refreshToken) {
-        List<User> users = userRepository.findAll();
-        for (User user : users) {
-            if (passwordEncoder.matches(refreshToken, user.getRefreshTokenHash())) {
-                return user;
+public User findByRefreshToken(String refreshToken) {
+    List<User> users = userRepository.findAll();
+    for (User user : users) {
+        if (user.getMetadata() != null) {
+            for (User.Metadata metadata : user.getMetadata()) {
+                if (passwordEncoder.matches(refreshToken, metadata.getRefreshTokenHash())) {
+                    return user;
+                }
             }
         }
-        return null;
     }
+    return null;
+}
 
     public void logoutUser(String token) {
         User user = findByRefreshToken(token);
         if (user != null) {
-            user.setRefreshTokenHash(null);
-            user.setRefreshTokenExpiryDate(null);
+            if (user.getMetadata() != null) {
+                for (User.Metadata metadata : user.getMetadata()) {
+                    if (passwordEncoder.matches(token, metadata.getRefreshTokenHash())) {
+                        metadata.setRefreshTokenHash(null);
+                        metadata.setRefreshTokenExpiryDate(null);
+                    }
+                }
+            }
             userRepository.save(user);
             logger.info("Logout bem-sucedido para o usuário: {}", user.getEmail());
         } else {

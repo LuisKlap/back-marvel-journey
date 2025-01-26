@@ -1,7 +1,6 @@
 package com.marvel.marveljourney.util;
 
 import com.marvel.marveljourney.exception.JwtTokenException;
-import com.marvel.marveljourney.model.User;
 import com.marvel.marveljourney.security.KeyManager;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Clock;
@@ -15,11 +14,9 @@ import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.security.Key;
-import java.time.Instant;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
-import java.util.UUID;
 
 @Component
 public class JwtUtil {
@@ -50,13 +47,6 @@ public class JwtUtil {
         } catch (Exception e) {
             throw new RuntimeException("Erro ao gerar token JWT", e);
         }
-    }
-
-    public String generateRefreshToken(User user, long refreshTokenDurationMs) {
-        String refreshToken = UUID.randomUUID().toString();
-        user.setRefreshTokenHash(refreshToken);
-        user.setRefreshTokenExpiryDate(Instant.now().plusMillis(refreshTokenDurationMs));
-        return refreshToken;
     }
 
     public Claims parseToken(String token, String expectedIssuer, String expectedAudience) {

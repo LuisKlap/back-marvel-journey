@@ -14,8 +14,6 @@ public class User {
     private String id;
     private String email;
     private String passwordHash;
-    private String refreshTokenHash;
-    private Instant refreshTokenExpiryDate;
     private Instant termsAcceptedAt;
     private Boolean newsletterConsent;
     private Instant createdAt;
@@ -23,12 +21,12 @@ public class User {
     private String status;
     private LoginAttempts loginAttempts;
     private List<String> roles;
-    private Metadata metadata;
+    private List<Metadata> metadata;
     private MfaData mfa;
     private int failedLoginAttempts;
     private Instant lockoutEndTime;
     private VerificationCode verificationCode;
-
+    
     @Data
     public static class LoginAttempts {
         private int count;
@@ -50,9 +48,11 @@ public class User {
 
     @Data
     public static class Metadata {
-        private Instant lastLoginAt;
+        private String device;
         private String ipAddress;
         private String userAgent;
-        private List<String> devices;
+        private String refreshTokenHash;
+        private Instant refreshTokenExpiryDate;
+        private Instant lastLoginAt;
     }
 }

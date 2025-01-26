@@ -29,6 +29,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -96,7 +97,8 @@ public class AuthController {
             user.setStatus("active");
             user.setRoles(List.of("ROLE_USER"));
             user.setLoginAttempts(new User.LoginAttempts());
-            user.setMetadata(new User.Metadata());
+            user.setMetadata(new ArrayList<>());
+            user.getMetadata().add(new User.Metadata());
 
             MfaData mfaData = new MfaData();
             mfaData.setSecret(null);
@@ -192,7 +194,20 @@ public class AuthController {
 
         try {
             User user = userService.findByRefreshToken(refreshToken);
-            if (user == null || user.getRefreshTokenExpiryDate().isBefore(Instant.now())) {
+            if (user == null) {
+                return ResponseEntity.status(401).body("Refresh token inválido ou expirado.");
+            }
+
+            boolean isTokenExpired = true;
+            for (User.Metadata metadata : user.getMetadata()) {
+                if (passwordEncoder.matches(refreshToken, metadata.getRefreshTokenHash()) &&
+                    metadata.getRefreshTokenExpiryDate().isAfter(Instant.now())) {
+                    isTokenExpired = false;
+                    break;
+                }
+            }
+
+            if (isTokenExpired) {
                 return ResponseEntity.status(401).body("Refresh token inválido ou expirado.");
             }
 

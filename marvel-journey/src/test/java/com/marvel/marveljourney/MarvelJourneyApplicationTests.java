@@ -10,6 +10,5 @@ class MarvelJourneyApplicationTests {
 
     @Test
     void contextLoads() {
-        // Este teste verifica se o contexto do Spring Boot é carregado corretamente
     }
 }

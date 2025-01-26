@@ -12,14 +12,6 @@ db.createCollection("users", {
                     bsonType: "string",
                     description: "Hash da senha"
                 },
-                refreshTokenHash: {
-                    bsonType: "string",
-                    description: "Hash do token de atualização"
-                },
-                refreshTokenExpiryDate: {
-                    bsonType: "date",
-                    description: "Data de expiração do token de atualização"
-                },
                 termsAcceptedAt: {
                     bsonType: "date",
                     description: "Data de aceitação dos termos"
@@ -62,28 +54,37 @@ db.createCollection("users", {
                     description: "Lista de papéis do usuário"
                 },
                 metadata: {
-                    bsonType: "object",
-                    properties: {
-                        lastLoginAt: {
-                            bsonType: "date",
-                            description: "Data do último login"
-                        },
-                        ipAddress: {
-                            bsonType: "string",
-                            description: "Endereço IP do último login"
-                        },
-                        userAgent: {
-                            bsonType: "string",
-                            description: "User agent do último login"
-                        },
-                        devices: {
-                            bsonType: "array",
-                            items: {
-                                bsonType: "string"
+                    bsonType: "array",
+                    items: {
+                        bsonType: "object",
+                        properties: {
+                            device: {
+                                bsonType: "string",
+                                description: "Dispositivo do usuário"
                             },
-                            description: "Lista de dispositivos do usuário"
+                            ipAddress: {
+                                bsonType: "string",
+                                description: "Endereço IP do último login"
+                            },
+                            userAgent: {
+                                bsonType: "string",
+                                description: "User agent do último login"
+                            },
+                            refreshTokenHash: {
+                                bsonType: "string",
+                                description: "Hash do token de atualização"
+                            },
+                            refreshTokenExpiryDate: {
+                                bsonType: "date",
+                                description: "Data de expiração do token de atualização"
+                            },
+                            lastLoginAt: {
+                                bsonType: "date",
+                                description: "Data do último login"
+                            }
                         }
-                    }
+                    },
+                    description: "Metadados do usuário"
                 },
                 mfa: {
                     bsonType: "object",
@@ -105,10 +106,6 @@ db.createCollection("users", {
                 lockoutEndTime: {
                     bsonType: "date",
                     description: "Data e hora do fim do bloqueio de conta"
-                },
-                isTest: {
-                    bsonType: "bool",
-                    description: "Indica se o registro é de teste"
                 },
                 verificationCode: {
                     bsonType: "object",
