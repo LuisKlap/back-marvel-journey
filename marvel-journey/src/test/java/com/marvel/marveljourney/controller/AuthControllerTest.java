@@ -73,7 +73,7 @@ class AuthControllerTest {
 
         ResponseEntity<?> response = authController.registerUser(registerRequest);
 
-        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(200, response.getStatusCode().value());
         verify(userService, times(1)).saveUser(any(User.class));
         verify(emailService, times(1)).sendVerificationEmail(eq(registerRequest.getEmail()), anyString());
     }
@@ -93,7 +93,7 @@ class AuthControllerTest {
 
         ResponseEntity<?> response = authController.verifyEmail(verificationRequest);
 
-        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(200, response.getStatusCode().value());
         verify(userService, times(1)).verifyEmail(verificationRequest.getEmail());
     }
 
@@ -116,7 +116,7 @@ class AuthControllerTest {
 
         ResponseEntity<?> response = authController.loginUser(loginRequest);
 
-        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(200, response.getStatusCode().value());
         assertTrue(response.getBody() instanceof Map);
         Map<String, String> responseBody = (Map<String, String>) response.getBody();
         assertEquals("jwtToken", responseBody.get("token"));
@@ -142,7 +142,7 @@ class AuthControllerTest {
 
         ResponseEntity<?> response = authController.refreshToken(request);
 
-        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(200, response.getStatusCode().value());
         assertTrue(response.getBody() instanceof Map);
         Map<String, String> responseBody = (Map<String, String>) response.getBody();
         assertEquals("newJwtToken", responseBody.get("token"));
@@ -159,7 +159,7 @@ class AuthControllerTest {
 
         ResponseEntity<byte[]> response = authController.setup2FA(mfaRequest);
 
-        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(200, response.getStatusCode().value());
         assertNotNull(response.getBody());
         assertEquals(MediaType.IMAGE_PNG, response.getHeaders().getContentType());
     }
@@ -175,7 +175,7 @@ class AuthControllerTest {
 
         ResponseEntity<?> response = authController.verify2FA(verificationRequest);
 
-        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(200, response.getStatusCode().value());
         assertEquals("Código verificado com sucesso", response.getBody());
     }
 
@@ -187,7 +187,7 @@ class AuthControllerTest {
 
         ResponseEntity<?> response = authController.logoutUser(request);
 
-        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(200, response.getStatusCode().value());
         assertEquals("Logout bem-sucedido.", response.getBody());
     }
 }
