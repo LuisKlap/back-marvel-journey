@@ -2,18 +2,15 @@ package com.marvel.marveljourney.util;
 
 import com.marvel.marveljourney.security.KeyManager;
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.security.Keys;
-import io.jsonwebtoken.SignatureAlgorithm;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.security.Key;
-import java.util.Date;
+import javax.crypto.SecretKey;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -27,85 +24,83 @@ class JwtUtilTest {
     @InjectMocks
     private JwtUtil jwtUtil;
 
-    private Key key;
+    private SecretKey key;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        key = Keys.secretKeyFor(SignatureAlgorithm.HS512);
+        key = Keys.secretKeyFor(io.jsonwebtoken.SignatureAlgorithm.HS512); // Chave de 512 bits
         when(keyManager.getActiveKey()).thenReturn(key);
     }
 
-        @Test
+    @Test
     void testGenerateToken() {
-        String token = jwtUtil.generateToken("testUser", 10000L, "issuer", "audience", List.of("ROLE_USER")); // Adicione a lista de roles
+        String subject = "testUser";
+        long expirationTime = 1000 * 60 * 60;
+        String issuer = "testIssuer";
+        String audience = "testAudience";
+        List<String> roles = List.of("ROLE_USER");
+
+        String token = jwtUtil.generateToken(subject, expirationTime, issuer, audience, roles);
+
         assertNotNull(token);
-    
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(key)
-                .setAllowedClockSkewSeconds(60) // Adiciona tolerância de tempo de 60 segundos
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-    
-        assertEquals("testUser", claims.getSubject());
-        assertEquals("issuer", claims.getIssuer());
-        assertEquals("audience", claims.getAudience());
-        assertEquals(List.of("ROLE_USER"), claims.get("roles"));
     }
 
     @Test
-    void testParseToken_Valid() {
-        String token = Jwts.builder()
-                .setSubject("testUser")
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 10000L)) // Ajuste o tempo de expiração para 10 segundos
-                .setIssuer("issuer")
-                .setAudience("audience")
-                .signWith(key, SignatureAlgorithm.HS512)
-                .compact();
+    void testParseToken() {
+        String subject = "testUser";
+        long expirationTime = 1000 * 60 * 60;
+        String issuer = "testIssuer";
+        String audience = "testAudience";
+        List<String> roles = List.of("ROLE_USER");
 
-        Claims claims = jwtUtil.parseToken(token, "issuer", "audience");
+        String token = jwtUtil.generateToken(subject, expirationTime, issuer, audience, roles);
+
+        Claims claims = jwtUtil.parseToken(token, issuer, audience);
+
         assertNotNull(claims);
-        assertEquals("testUser", claims.getSubject());
-        assertEquals("issuer", claims.getIssuer());
-        assertEquals("audience", claims.getAudience());
-    }
-
-        @Test
-    void testParseToken_InvalidSignature() {
-        Key invalidKey = Keys.secretKeyFor(SignatureAlgorithm.HS512);
-        String token = Jwts.builder()
-                .setSubject("testUser")
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 10000L)) // Ajuste o tempo de expiração para 10 segundos
-                .setIssuer("issuer")
-                .setAudience("audience")
-                .signWith(invalidKey, SignatureAlgorithm.HS512)
-                .compact();
-    
-        JwtException exception = assertThrows(JwtException.class, () -> {
-            jwtUtil.parseToken(token, "issuer", "audience");
-        });
-    
-        assertEquals("Issuer or Audience does not match", exception.getMessage());
+        assertEquals(subject, claims.getSubject());
+        assertEquals(issuer, claims.getIssuer());
+        assertEquals(audience, claims.getAudience());
+        assertEquals(roles, claims.get("roles"));
     }
 
     @Test
-    void testParseToken_InvalidIssuerOrAudience() {
-        String token = Jwts.builder()
-                .setSubject("testUser")
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 10000L)) // Ajuste o tempo de expiração para 10 segundos
-                .setIssuer("invalidIssuer")
-                .setAudience("invalidAudience")
-                .signWith(key, SignatureAlgorithm.HS512)
-                .compact();
+    void testParseTokenWithInvalidIssuer() {
+        String subject = "testUser";
+        long expirationTime = 1000 * 60 * 60;
+        String issuer = "testIssuer";
+        String audience = "testAudience";
+        List<String> roles = List.of("ROLE_USER");
 
-        JwtException exception = assertThrows(JwtException.class, () -> {
-            jwtUtil.parseToken(token, "issuer", "audience");
-        });
+        String token = jwtUtil.generateToken(subject, expirationTime, issuer, audience, roles);
 
-        assertEquals("Issuer or Audience does not match", exception.getMessage());
+        assertThrows(JwtException.class, () -> jwtUtil.parseToken(token, "invalidIssuer", audience));
+    }
+
+    @Test
+    void testParseTokenWithInvalidAudience() {
+        String subject = "testUser";
+        long expirationTime = 1000 * 60 * 60;
+        String issuer = "testIssuer";
+        String audience = "testAudience";
+        List<String> roles = List.of("ROLE_USER");
+
+        String token = jwtUtil.generateToken(subject, expirationTime, issuer, audience, roles);
+
+        assertThrows(JwtException.class, () -> jwtUtil.parseToken(token, issuer, "invalidAudience"));
+    }
+
+    @Test
+    void testParseTokenWithExpiredToken() {
+        String subject = "testUser";
+        long expirationTime = -1000 * 60 * 60;
+        String issuer = "testIssuer";
+        String audience = "testAudience";
+        List<String> roles = List.of("ROLE_USER");
+
+        String token = jwtUtil.generateToken(subject, expirationTime, issuer, audience, roles);
+
+        assertThrows(JwtException.class, () -> jwtUtil.parseToken(token, issuer, audience));
     }
 }

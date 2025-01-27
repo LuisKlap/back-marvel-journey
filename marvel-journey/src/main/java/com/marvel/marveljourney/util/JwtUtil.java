@@ -27,7 +27,7 @@ public class JwtUtil {
     private static final Logger logger = LoggerFactory.getLogger(JwtUtil.class);
     private static final String ISSUER_AUDIENCE_MISMATCH = "Issuer or Audience does not match";
     private static final Clock clock = DefaultClock.INSTANCE;
-    private static final long ALLOWED_CLOCK_SKEW_MILLIS = 30000; // 30 segundos de tolerância
+    private static final long ALLOWED_CLOCK_SKEW_MILLIS = 30000;
 
     public String generateToken(String subject, long expirationTime, String issuer, String audience,
             List<String> roles) {
