@@ -44,8 +44,8 @@ class JwtAuthenticationTokenTest {
     }
 
     @Test
-    void testGetAuthorities_NoRoles() {
-        claims.put("roles", null);
+    void testGetAuthoritiesWhenNoRoles() {
+        claims.remove("roles");
         jwtAuthenticationToken = new JwtAuthenticationToken(claims);
         Collection<GrantedAuthority> authorities = jwtAuthenticationToken.getAuthorities();
         assertNotNull(authorities);
