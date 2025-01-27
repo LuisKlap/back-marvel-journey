@@ -13,6 +13,7 @@ import com.marvel.marveljourney.config.EmailConfig;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 
 @SpringBootTest
 @Import({SecurityConfig.class, EmailConfig.class})
@@ -27,20 +28,20 @@ class SecurityConfigTest {
     @Test
     void testPasswordEncoder() {
         BCryptPasswordEncoder encoder = securityConfig.passwordEncoder();
-        assertNotNull(encoder);
-        assertTrue(encoder.matches("password", encoder.encode("password")));
+        assertNotNull(encoder, "BCryptPasswordEncoder não deveria ser nulo");
+        assertTrue(encoder.matches("password", encoder.encode("password")), "A senha codificada deveria corresponder à senha original");
     }
 
     @Test
     void testCorsConfigurationSource() {
         CorsConfigurationSource source = securityConfig.corsConfigurationSource();
-        assertNotNull(source);
+        assertNotNull(source, "CorsConfigurationSource não deveria ser nulo");
     }
 
     @Test
     void testSecurityFilterChain() throws Exception {
-        HttpSecurity http = org.mockito.Mockito.mock(HttpSecurity.class);
+        HttpSecurity http = mock(HttpSecurity.class);
         SecurityFilterChain filterChain = securityConfig.securityFilterChain(http, jwtAuthenticationFilter);
-        assertNotNull(filterChain);
+        assertNotNull(filterChain, "SecurityFilterChain não deveria ser nulo");
     }
 }
