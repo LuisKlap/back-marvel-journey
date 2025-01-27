@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest
-@Import(EmailConfig.class) // Adicione esta linha para importar a configuração
+@Import(EmailConfig.class)
 class EmailConfigTest {
     Logger logger = LoggerFactory.getLogger(EmailConfigTest.class);
 
@@ -34,15 +34,10 @@ class EmailConfigTest {
     @Test
     void testJavaMailSenderConfiguration() {
         try {
-
-            assertEquals("smtp.gmail.com", javaMailSender.getHost());
-            assertEquals(465, javaMailSender.getPort());
-            assertEquals("marvel.journey.project@gmail.com", javaMailSender.getUsername());
-            assertEquals("jhkh dvwg jcbb kiot", javaMailSender.getPassword());
-
-            // var props = javaMailSender.getJavaMailProperties();
-            // assertTrue(Boolean.parseBoolean(props.getProperty("mail.smtp.auth")));
-            // assertTrue(Boolean.parseBoolean(props.getProperty("mail.smtp.starttls.enable")));
+            assertEquals(host, javaMailSender.getHost());
+            assertEquals(port, javaMailSender.getPort());
+            assertEquals(username, javaMailSender.getUsername());
+            assertEquals(password, javaMailSender.getPassword());
         } catch (AssertionError e) {
             logger.error("Erro na configuração do JavaMailSender: ", e);
             throw e;
