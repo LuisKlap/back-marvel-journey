@@ -127,19 +127,20 @@ public class UserService {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
         return user.getMfa().getSecret();
     }
-public User findByRefreshToken(String refreshToken) {
-    List<User> users = userRepository.findAll();
-    for (User user : users) {
-        if (user.getMetadata() != null) {
-            for (User.Metadata metadata : user.getMetadata()) {
-                if (passwordEncoder.matches(refreshToken, metadata.getRefreshTokenHash())) {
-                    return user;
+
+    public User findByRefreshToken(String refreshToken) {
+        List<User> users = userRepository.findAll();
+        for (User user : users) {
+            if (user.getMetadata() != null) {
+                for (User.Metadata metadata : user.getMetadata()) {
+                    if (passwordEncoder.matches(refreshToken, metadata.getRefreshTokenHash())) {
+                        return user;
+                    }
                 }
             }
         }
+        return null;
     }
-    return null;
-}
 
     public void logoutUser(String token) {
         User user = findByRefreshToken(token);
