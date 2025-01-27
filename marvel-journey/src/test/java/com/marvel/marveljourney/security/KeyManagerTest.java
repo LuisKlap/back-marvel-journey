@@ -19,15 +19,20 @@ class KeyManagerTest {
     }
 
     @Test
-    void testGetActiveKey() {
-        Key activeKey = keyManager.getActiveKey();
-        assertNotNull(activeKey);
+    void testInit() {
+        List<Key> keys = keyManager.getAllKeys();
+        assertNotNull(keys);
+        assertEquals(3, keys.size());
+        for (Key key : keys) {
+            assertNotNull(key);
+        }
     }
 
     @Test
-    void testGetAllKeys() {
-        List<Key> keys = keyManager.getAllKeys();
-        assertEquals(3, keys.size());
+    void testGetActiveKey() {
+        Key activeKey = keyManager.getActiveKey();
+        assertNotNull(activeKey);
+        assertEquals(keyManager.getAllKeys().get(0), activeKey);
     }
 
     @Test
@@ -35,6 +40,15 @@ class KeyManagerTest {
         Key initialKey = keyManager.getActiveKey();
         keyManager.rotateKey();
         Key newKey = keyManager.getActiveKey();
+        assertNotNull(newKey);
         assertNotEquals(initialKey, newKey);
+        assertEquals(keyManager.getAllKeys().get(1), newKey);
+    }
+
+    @Test
+    void testGetAllKeys() {
+        List<Key> keys = keyManager.getAllKeys();
+        assertNotNull(keys);
+        assertEquals(3, keys.size());
     }
 }
