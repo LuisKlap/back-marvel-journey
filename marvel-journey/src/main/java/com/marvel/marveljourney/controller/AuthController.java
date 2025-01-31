@@ -98,7 +98,11 @@ public class AuthController {
             user.setRoles(List.of("ROLE_USER"));
             user.setLoginAttempts(new User.LoginAttempts());
             user.setMetadata(new ArrayList<>());
-            user.getMetadata().add(new User.Metadata());
+            User.Metadata metadata = new User.Metadata();
+            metadata.setDevice(registerRequest.getDevice());
+            metadata.setIpAddress(registerRequest.getIpAddress());
+            metadata.setUserAgent(registerRequest.getUserAgent());
+            user.getMetadata().add(metadata);
 
             MfaData mfaData = new MfaData();
             mfaData.setSecret(null);
@@ -201,7 +205,7 @@ public class AuthController {
             boolean isTokenExpired = true;
             for (User.Metadata metadata : user.getMetadata()) {
                 if (passwordEncoder.matches(refreshToken, metadata.getRefreshTokenHash()) &&
-                    metadata.getRefreshTokenExpiryDate().isAfter(Instant.now())) {
+                        metadata.getRefreshTokenExpiryDate().isAfter(Instant.now())) {
                     isTokenExpired = false;
                     break;
                 }

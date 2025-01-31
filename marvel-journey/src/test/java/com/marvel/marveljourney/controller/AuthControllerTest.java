@@ -63,9 +63,15 @@ class AuthControllerTest {
 
     @Test
     void testRegisterUser() {
-        RegisterRequest registerRequest = new RegisterRequest(null, null);
-        registerRequest.setEmail("test@example.com");
-        registerRequest.setPassword("StrongPassword123");
+        RegisterRequest registerRequest = new RegisterRequest(
+            "test@example.com",
+            "StrongPassword123",
+            true,
+            true,
+            "device",
+            "127.0.0.1",
+            "userAgent"
+        );
 
         when(userService.findByEmail(registerRequest.getEmail())).thenReturn(null);
         when(passwordValidatorUtil.validate(registerRequest.getPassword())).thenReturn(true);
