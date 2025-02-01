@@ -4,6 +4,7 @@ import com.marvel.marveljourney.dto.LoginRequest;
 import com.marvel.marveljourney.dto.RegisterRequest;
 import com.marvel.marveljourney.dto.VerificationRequest;
 import com.marvel.marveljourney.dto.MfaRequest;
+import com.marvel.marveljourney.exception.UserNotFoundException;
 import com.marvel.marveljourney.model.User;
 import com.marvel.marveljourney.service.EmailService;
 import com.marvel.marveljourney.service.UserService;
@@ -64,14 +65,13 @@ class AuthControllerTest {
     @Test
     void testRegisterUser() {
         RegisterRequest registerRequest = new RegisterRequest(
-            "test@example.com",
-            "StrongPassword123",
-            true,
-            true,
-            "device",
-            "127.0.0.1",
-            "userAgent"
-        );
+                "test@example.com",
+                "StrongPassword123",
+                true,
+                true,
+                "device",
+                "127.0.0.1",
+                "userAgent");
 
         when(userService.findByEmail(registerRequest.getEmail())).thenReturn(null);
         when(passwordValidatorUtil.validate(registerRequest.getPassword())).thenReturn(true);
@@ -93,6 +93,7 @@ class AuthControllerTest {
         User user = new User();
         User.VerificationCode verificationCode = new User.VerificationCode();
         verificationCode.setCode("123456");
+        verificationCode.setCreatedAt(Instant.now());
         user.setVerificationCode(verificationCode);
 
         when(userService.findByEmail(verificationRequest.getEmail())).thenReturn(user);
@@ -101,6 +102,44 @@ class AuthControllerTest {
 
         assertEquals(200, response.getStatusCode().value());
         verify(userService, times(1)).verifyEmail(verificationRequest.getEmail());
+    }
+
+    @Test
+    void testVerifyEmail_UserNotFound() {
+        VerificationRequest verificationRequest = new VerificationRequest();
+        verificationRequest.setEmail("test@example.com");
+        verificationRequest.setCode("123456");
+
+        when(userService.findByEmail(verificationRequest.getEmail())).thenReturn(null);
+
+        ResponseEntity<?> response = authController.verifyEmail(verificationRequest);
+
+        assertEquals(404, response.getStatusCode().value());
+        assertTrue(response.getBody() instanceof Map);
+        Map<String, String> responseBody = (Map<String, String>) response.getBody();
+        assertEquals("USER_NOT_FOUND", responseBody.get("error"));
+    }
+
+    @Test
+    void testVerifyEmail_CodeExpired() {
+        VerificationRequest verificationRequest = new VerificationRequest();
+        verificationRequest.setEmail("test@example.com");
+        verificationRequest.setCode("123456");
+
+        User user = new User();
+        User.VerificationCode verificationCode = new User.VerificationCode();
+        verificationCode.setCode("123456");
+        verificationCode.setCreatedAt(Instant.now().minusSeconds(3600));
+        user.setVerificationCode(verificationCode);
+
+        when(userService.findByEmail(verificationRequest.getEmail())).thenReturn(user);
+
+        ResponseEntity<?> response = authController.verifyEmail(verificationRequest);
+
+        assertEquals(400, response.getStatusCode().value());
+        assertTrue(response.getBody() instanceof Map);
+        Map<String, String> responseBody = (Map<String, String>) response.getBody();
+        assertEquals("EXPIRED_VERIFICATION_CODE", responseBody.get("error"));
     }
 
     @Test
@@ -117,7 +156,8 @@ class AuthControllerTest {
         when(userService.findByEmail(loginRequest.getEmail())).thenReturn(user);
         when(userService.validatePassword(loginRequest.getPassword(), user.getPasswordHash())).thenReturn(true);
         when(userService.emailIsVerified(user.getEmail())).thenReturn(true);
-        when(jwtUtil.generateToken(eq(user.getEmail()), anyLong(), anyString(), anyString(), eq(user.getRoles()))).thenReturn("jwtToken");
+        when(jwtUtil.generateToken(eq(user.getEmail()), anyLong(), anyString(), anyString(), eq(user.getRoles())))
+                .thenReturn("jwtToken");
         when(refreshTokenService.generateRefreshToken(eq(user), anyLong())).thenReturn("refreshToken");
 
         ResponseEntity<?> response = authController.loginUser(loginRequest);
@@ -143,7 +183,8 @@ class AuthControllerTest {
 
         when(userService.findByRefreshToken(request.get("refreshToken"))).thenReturn(user);
         when(passwordEncoder.matches(eq(request.get("refreshToken")), anyString())).thenReturn(true);
-        when(jwtUtil.generateToken(eq(user.getEmail()), anyLong(), anyString(), anyString(), eq(user.getRoles()))).thenReturn("newJwtToken");
+        when(jwtUtil.generateToken(eq(user.getEmail()), anyLong(), anyString(), anyString(), eq(user.getRoles())))
+                .thenReturn("newJwtToken");
         when(refreshTokenService.generateRefreshToken(eq(user), anyLong())).thenReturn("newRefreshToken");
 
         ResponseEntity<?> response = authController.refreshToken(request);
@@ -182,7 +223,24 @@ class AuthControllerTest {
         ResponseEntity<?> response = authController.verify2FA(verificationRequest);
 
         assertEquals(200, response.getStatusCode().value());
-        assertEquals("Código verificado com sucesso", response.getBody());
+        assertEquals("Code successfully verified", response.getBody());
+    }
+
+    @Test
+    void testVerify2FA_UserNotFound() {
+        VerificationRequest verificationRequest = new VerificationRequest();
+        verificationRequest.setEmail("test@example.com");
+        verificationRequest.setCode("123456");
+
+        when(userService.getUserSecret(verificationRequest.getEmail()))
+                .thenThrow(new UserNotFoundException("Usuário não encontrado"));
+
+        ResponseEntity<?> response = authController.verify2FA(verificationRequest);
+
+        assertEquals(404, response.getStatusCode().value());
+        assertTrue(response.getBody() instanceof Map);
+        Map<String, String> responseBody = (Map<String, String>) response.getBody();
+        assertEquals("USER_NOT_FOUND", responseBody.get("error"));
     }
 
     @Test

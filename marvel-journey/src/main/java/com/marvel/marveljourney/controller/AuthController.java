@@ -3,6 +3,8 @@ package com.marvel.marveljourney.controller;
 import com.marvel.marveljourney.dto.LoginRequest;
 import com.marvel.marveljourney.dto.RegisterRequest;
 import com.marvel.marveljourney.dto.VerificationRequest;
+import com.marvel.marveljourney.exception.ErrorCode;
+import com.marvel.marveljourney.exception.UserNotFoundException;
 import com.marvel.marveljourney.dto.MfaRequest;
 import com.marvel.marveljourney.model.User;
 import com.marvel.marveljourney.model.User.MfaData;
@@ -28,6 +30,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -78,14 +81,15 @@ public class AuthController {
 
             if (userExist != null) {
                 logger.warn("Tentativa de registro com email já existente: {}", registerRequest.getEmail());
-                return ResponseEntity.badRequest().body("Email já registrado.");
+                return ResponseEntity.status(400).body(Map.of("error", ErrorCode.EMAIL_ALREADY_REGISTERED.name(),
+                        "message", ErrorCode.EMAIL_ALREADY_REGISTERED.getMessage()));
             }
 
             if (!passwordValidatorUtil.validate(registerRequest.getPassword())) {
                 logger.warn("Tentativa de registro com senha fraca: {}", registerRequest.getEmail());
-                return ResponseEntity.badRequest().body(
-                        "Senha fraca. "
-                                + String.join(", ", passwordValidatorUtil.getMessages(registerRequest.getPassword())));
+                return ResponseEntity.status(400).body(Map.of("error", ErrorCode.WEAK_PASSWORD.name(), "message",
+                        ErrorCode.WEAK_PASSWORD.getMessage() + " "
+                                + String.join(", ", passwordValidatorUtil.getMessages(registerRequest.getPassword()))));
             }
 
             User user = new User();
@@ -119,10 +123,12 @@ public class AuthController {
             user.setVerificationCode(verification);
 
             userService.saveUser(user);
-            return ResponseEntity.ok("Registro bem-sucedido. Verifique seu email para o código de verificação.");
+            return ResponseEntity.ok(
+                    Map.of("message", "Registration successful. Please check your email for the verification code."));
         } catch (Exception e) {
             logger.error("Erro ao registrar usuário", e);
-            return ResponseEntity.status(500).body("Erro interno do servidor");
+            return ResponseEntity.status(500).body(Map.of("error", ErrorCode.INTERNAL_SERVER_ERROR.name(), "message",
+                    ErrorCode.INTERNAL_SERVER_ERROR.getMessage()));
         }
     }
 
@@ -132,17 +138,28 @@ public class AuthController {
         User userExist = userService.findByEmail(verificationRequest.getEmail());
 
         if (userExist == null) {
-            return ResponseEntity.status(404).body("Usuário não encontrado.");
+            return ResponseEntity.status(404).body(
+                    Map.of("error", ErrorCode.USER_NOT_FOUND.name(), "message", ErrorCode.USER_NOT_FOUND.getMessage()));
         }
 
         VerificationCode verificationCode = userExist.getVerificationCode();
 
         if (verificationCode == null || !verificationCode.getCode().equals(verificationRequest.getCode())) {
-            return ResponseEntity.status(400).body("Código de verificação inválido.");
+            return ResponseEntity.status(400).body(Map.of("error", ErrorCode.INVALID_VERIFICATION_CODE.name(),
+                    "message", ErrorCode.INVALID_VERIFICATION_CODE.getMessage()));
+        }
+
+        Instant now = Instant.now();
+        Instant codeCreationTime = verificationCode.getCreatedAt();
+        Duration duration = Duration.between(codeCreationTime, now);
+
+        if (duration.toMinutes() > 5) {
+            return ResponseEntity.status(400).body(Map.of("error", ErrorCode.EXPIRED_VERIFICATION_CODE.name(),
+                    "message", ErrorCode.EXPIRED_VERIFICATION_CODE.getMessage()));
         }
 
         userService.verifyEmail(verificationRequest.getEmail());
-        return ResponseEntity.ok("Email verificado com sucesso.");
+        return ResponseEntity.ok(Map.of("message", "Email successfully verified."));
     }
 
     @Operation(summary = "Login de um usuário")
@@ -153,24 +170,27 @@ public class AuthController {
 
             if (userOptional == null) {
                 logger.warn("Tentativa de login com email não registrado: {}", loginRequest.getEmail());
-                return ResponseEntity.status(401).body("Credenciais inválidas.");
+                return ResponseEntity.status(401).body(Map.of("error", ErrorCode.INVALID_CREDENTIALS.name(), "message",
+                        ErrorCode.INVALID_CREDENTIALS.getMessage()));
             }
 
             if (userService.isAccountLocked(userOptional)) {
                 logger.warn("Tentativa de login com conta bloqueada: {}", loginRequest.getEmail());
-                return ResponseEntity.status(403).body("Conta bloqueada. Tente novamente mais tarde.");
+                return ResponseEntity.status(403).body(Map.of("error", ErrorCode.ACCOUNT_LOCKED.name(), "message",
+                        ErrorCode.ACCOUNT_LOCKED.getMessage()));
             }
 
             if (!userService.validatePassword(loginRequest.getPassword(), userOptional.getPasswordHash())) {
                 userService.increaseFailedAttempts(userOptional);
                 logger.warn("Tentativa de login com senha inválida para o email: {}", loginRequest.getEmail());
-                return ResponseEntity.status(401).body("Credenciais inválidas.");
+                return ResponseEntity.status(401).body(Map.of("error", ErrorCode.INVALID_CREDENTIALS.name(), "message",
+                        ErrorCode.INVALID_CREDENTIALS.getMessage()));
             }
 
-            if (userService.emailIsVerified(userOptional.getEmail()) == false) {
+            if (!userService.emailIsVerified(userOptional.getEmail())) {
                 logger.warn("Tentativa de login com email não verificado: {}", loginRequest.getEmail());
-                return ResponseEntity.status(403)
-                        .body("Email não verificado. Verifique seu email antes de fazer login.");
+                return ResponseEntity.status(403).body(Map.of("error", ErrorCode.EMAIL_NOT_VERIFIED.name(), "message",
+                        ErrorCode.EMAIL_NOT_VERIFIED.getMessage()));
             }
 
             userService.resetFailedAttempts(userOptional);
@@ -184,7 +204,8 @@ public class AuthController {
             return ResponseEntity.ok(Map.of("token", token, "refreshToken", refreshToken));
         } catch (Exception e) {
             logger.error("Erro ao fazer login", e);
-            return ResponseEntity.status(500).body("Erro interno do servidor");
+            return ResponseEntity.status(500).body(Map.of("error", ErrorCode.INTERNAL_SERVER_ERROR.name(), "message",
+                    ErrorCode.INTERNAL_SERVER_ERROR.getMessage()));
         }
     }
 
@@ -193,13 +214,15 @@ public class AuthController {
     public ResponseEntity<?> refreshToken(@RequestBody Map<String, String> request) {
         String refreshToken = request.get("refreshToken");
         if (refreshToken == null || refreshToken.isEmpty()) {
-            return ResponseEntity.status(400).body("Refresh token é obrigatório.");
+            return ResponseEntity.status(400).body(Map.of("error", ErrorCode.INVALID_VERIFICATION_CODE.name(),
+                    "message", "Refresh token is required."));
         }
 
         try {
             User user = userService.findByRefreshToken(refreshToken);
             if (user == null) {
-                return ResponseEntity.status(401).body("Refresh token inválido ou expirado.");
+                return ResponseEntity.status(401).body(Map.of("error", ErrorCode.INVALID_CREDENTIALS.name(), "message",
+                        "Invalid or expired refresh token."));
             }
 
             boolean isTokenExpired = true;
@@ -212,15 +235,17 @@ public class AuthController {
             }
 
             if (isTokenExpired) {
-                return ResponseEntity.status(401).body("Refresh token inválido ou expirado.");
+                return ResponseEntity.status(401).body(Map.of("error", ErrorCode.EXPIRED_VERIFICATION_CODE.name(),
+                        "message", "Invalid or expired refresh token."));
             }
 
             String token = jwtUtil.generateToken(user.getEmail(), jwtExpirationTime, ISSUER, AUDIENCE, user.getRoles());
             String newRefreshToken = refreshTokenService.generateRefreshToken(user, refreshTokenDurationMs);
             return ResponseEntity.ok(Map.of("token", token, "refreshToken", newRefreshToken));
         } catch (Exception e) {
-            logger.error("Erro ao renovar o token", e);
-            return ResponseEntity.status(500).body("Erro interno do servidor");
+            logger.error("Error renewing token", e);
+            return ResponseEntity.status(500).body(Map.of("error", ErrorCode.INTERNAL_SERVER_ERROR.name(), "message",
+                    ErrorCode.INTERNAL_SERVER_ERROR.getMessage()));
         }
     }
 
@@ -243,14 +268,24 @@ public class AuthController {
     @Operation(summary = "Verificar código de autenticação de dois fatores")
     @PostMapping("/verify-2fa")
     public ResponseEntity<?> verify2FA(@RequestBody VerificationRequest verificationRequest) {
-        String email = verificationRequest.getEmail();
-        String code = verificationRequest.getCode();
-        String secret = userService.getUserSecret(email);
-        boolean isValid = twoFactorAuthService.verifyCode(secret, code);
-        if (isValid) {
-            return ResponseEntity.ok("Código verificado com sucesso");
-        } else {
-            return ResponseEntity.status(400).body("Código inválido");
+        try {
+            String email = verificationRequest.getEmail();
+            String code = verificationRequest.getCode();
+            String secret = userService.getUserSecret(email);
+            boolean isValid = twoFactorAuthService.verifyCode(secret, code);
+            if (isValid) {
+                return ResponseEntity.ok("Code successfully verified");
+            } else {
+                return ResponseEntity.status(400).body(Map.of("error", ErrorCode.INVALID_VERIFICATION_CODE.name(),
+                        "message", ErrorCode.INVALID_VERIFICATION_CODE.getMessage()));
+            }
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(404).body(
+                    Map.of("error", ErrorCode.USER_NOT_FOUND.name(), "message", ErrorCode.USER_NOT_FOUND.getMessage()));
+        } catch (Exception e) {
+            logger.error("Erro ao verificar código de autenticação de dois fatores", e);
+            return ResponseEntity.status(500).body(Map.of("error", ErrorCode.INTERNAL_SERVER_ERROR.name(), "message",
+                    ErrorCode.INTERNAL_SERVER_ERROR.getMessage()));
         }
     }
 
@@ -263,7 +298,7 @@ public class AuthController {
             return ResponseEntity.ok("Logout bem-sucedido.");
         } catch (Exception e) {
             logger.error("Erro ao fazer logout", e);
-            return ResponseEntity.status(500).body("Erro interno do servidor");
+            return ResponseEntity.status(500).body("Internal server error");
         }
     }
 }
