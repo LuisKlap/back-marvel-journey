@@ -301,4 +301,21 @@ public class AuthController {
             return ResponseEntity.status(500).body("Internal server error");
         }
     }
+
+    @Operation(summary = "Enviar código de verificação para o email")
+    @PostMapping("/send-verification-code")
+    public ResponseEntity<?> sendVerificationCode(@RequestBody VerificationRequest verificationRequest) {
+        try {
+            String email = verificationRequest.getEmail();
+            String verificationCode = VerificationCodeUtil.generateCode();
+
+            userService.updateVerificationCode(email, verificationCode, Instant.now());
+            emailService.sendVerificationEmail(email, verificationCode);
+
+            return ResponseEntity.ok(Map.of("message", "Verification code sent successfully."));
+        } catch (Exception e) {
+            logger.error("Erro ao enviar código de verificação", e);
+            return ResponseEntity.status(500).body(Map.of("error", "INTERNAL_SERVER_ERROR", "message", "Erro interno do servidor"));
+        }
+    }
 }

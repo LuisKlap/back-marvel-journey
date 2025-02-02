@@ -254,4 +254,21 @@ class AuthControllerTest {
         assertEquals(200, response.getStatusCode().value());
         assertEquals("Logout bem-sucedido.", response.getBody());
     }
+
+    @Test
+    void testSendVerificationCode() {
+        VerificationRequest verificationRequest = new VerificationRequest();
+        verificationRequest.setEmail("test@example.com");
+
+        doNothing().when(userService).updateVerificationCode(anyString(), anyString(), any(Instant.class));
+        doNothing().when(emailService).sendVerificationEmail(anyString(), anyString());
+
+        ResponseEntity<?> response = authController.sendVerificationCode(verificationRequest);
+
+        assertEquals(200, response.getStatusCode().value());
+        assertEquals("Verification code sent successfully.", ((Map<String, String>) response.getBody()).get("message"));
+
+        verify(userService, times(1)).updateVerificationCode(eq("test@example.com"), anyString(), any(Instant.class));
+        verify(emailService, times(1)).sendVerificationEmail(eq("test@example.com"), anyString());
+    }
 }

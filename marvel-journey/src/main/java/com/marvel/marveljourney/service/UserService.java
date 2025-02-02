@@ -159,4 +159,13 @@ public class UserService {
             throw new RuntimeException("Usuário não encontrado");
         }
     }
+
+    public void updateVerificationCode(String email, String code, Instant createdAt) {
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+        User.VerificationCode verificationCode = new User.VerificationCode();
+        verificationCode.setCode(code);
+        verificationCode.setCreatedAt(createdAt);
+        user.setVerificationCode(verificationCode);
+        userRepository.save(user);
+    }
 }

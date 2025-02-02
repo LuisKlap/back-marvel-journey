@@ -183,4 +183,19 @@ class UserServiceTest {
         assertNull(user.getMetadata().get(0).getRefreshTokenExpiryDate());
         verify(userRepository, times(1)).save(user);
     }
+
+    @Test
+    void testUpdateVerificationCode() {
+        String email = "test@example.com";
+        String code = "123456";
+        Instant createdAt = Instant.now();
+
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
+
+        userService.updateVerificationCode(email, code, createdAt);
+
+        assertEquals(code, user.getVerificationCode().getCode());
+        assertEquals(createdAt, user.getVerificationCode().getCreatedAt());
+        verify(userRepository, times(1)).save(user);
+    }
 }
