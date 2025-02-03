@@ -318,4 +318,17 @@ public class AuthController {
             return ResponseEntity.status(500).body(Map.of("error", "INTERNAL_SERVER_ERROR", "message", "Erro interno do servidor"));
         }
     }
+
+    @Operation(summary = "Verifica se o email existe na base de dados")
+    @PostMapping("/check-email")
+    public ResponseEntity<?> checkEmail(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        User user = userService.findByEmail(email);
+        if (user == null) {
+            return ResponseEntity.status(404).body(Map.of("error", ErrorCode.USER_NOT_FOUND.name(), "message",
+                    ErrorCode.USER_NOT_FOUND.getMessage()));
+        } else {
+            return ResponseEntity.ok(Map.of("message", "User found"));
+        }
+    }
 }
