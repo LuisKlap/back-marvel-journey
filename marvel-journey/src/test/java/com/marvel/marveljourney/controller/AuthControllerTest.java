@@ -86,9 +86,7 @@ class AuthControllerTest {
 
     @Test
     void testVerifyEmail() {
-        VerificationRequest verificationRequest = new VerificationRequest();
-        verificationRequest.setEmail("test@example.com");
-        verificationRequest.setCode("123456");
+        VerificationRequest verificationRequest = new VerificationRequest("test@example.com", "123456");
 
         User user = new User();
         User.VerificationCode verificationCode = new User.VerificationCode();
@@ -106,9 +104,7 @@ class AuthControllerTest {
 
     @Test
     void testVerifyEmail_UserNotFound() {
-        VerificationRequest verificationRequest = new VerificationRequest();
-        verificationRequest.setEmail("test@example.com");
-        verificationRequest.setCode("123456");
+        VerificationRequest verificationRequest = new VerificationRequest("test@example.com", "123456");
 
         when(userService.findByEmail(verificationRequest.getEmail())).thenReturn(null);
 
@@ -122,9 +118,7 @@ class AuthControllerTest {
 
     @Test
     void testVerifyEmail_CodeExpired() {
-        VerificationRequest verificationRequest = new VerificationRequest();
-        verificationRequest.setEmail("test@example.com");
-        verificationRequest.setCode("123456");
+        VerificationRequest verificationRequest = new VerificationRequest("test@example.com", "123456");
 
         User user = new User();
         User.VerificationCode verificationCode = new User.VerificationCode();
@@ -144,9 +138,7 @@ class AuthControllerTest {
 
     @Test
     void testLoginUser() {
-        LoginRequest loginRequest = new LoginRequest(null, null, null, null);
-        loginRequest.setEmail("test@example.com");
-        loginRequest.setPassword("password");
+        LoginRequest loginRequest = new LoginRequest("test@example.com", "password", null, null);
 
         User user = new User();
         user.setEmail("test@example.com");
@@ -199,7 +191,6 @@ class AuthControllerTest {
     @Test
     void testSetup2FA() throws QrGenerationException {
         MfaRequest mfaRequest = new MfaRequest("test@example.com");
-        mfaRequest.setEmail("test@example.com");
 
         when(twoFactorAuthService.generateSecret()).thenReturn("secret");
         when(twoFactorAuthService.generateQrCodeImage(eq("secret"), eq(mfaRequest.getEmail()))).thenReturn(new byte[0]);
@@ -213,9 +204,7 @@ class AuthControllerTest {
 
     @Test
     void testVerify2FA() {
-        VerificationRequest verificationRequest = new VerificationRequest();
-        verificationRequest.setEmail("test@example.com");
-        verificationRequest.setCode("123456");
+        VerificationRequest verificationRequest = new VerificationRequest("test@example.com", "123456");
 
         when(userService.getUserSecret(verificationRequest.getEmail())).thenReturn("secret");
         when(twoFactorAuthService.verifyCode(eq("secret"), eq(verificationRequest.getCode()))).thenReturn(true);
@@ -228,9 +217,7 @@ class AuthControllerTest {
 
     @Test
     void testVerify2FA_UserNotFound() {
-        VerificationRequest verificationRequest = new VerificationRequest();
-        verificationRequest.setEmail("test@example.com");
-        verificationRequest.setCode("123456");
+        VerificationRequest verificationRequest = new VerificationRequest("test@example.com", "123456");
 
         when(userService.getUserSecret(verificationRequest.getEmail()))
                 .thenThrow(new UserNotFoundException("Usuário não encontrado"));
@@ -257,8 +244,7 @@ class AuthControllerTest {
 
     @Test
     void testSendVerificationCode() {
-        VerificationRequest verificationRequest = new VerificationRequest();
-        verificationRequest.setEmail("test@example.com");
+        VerificationRequest verificationRequest = new VerificationRequest("test@example.com", null);
 
         doNothing().when(userService).updateVerificationCode(anyString(), anyString(), any(Instant.class));
         doNothing().when(emailService).sendVerificationEmail(anyString(), anyString());
