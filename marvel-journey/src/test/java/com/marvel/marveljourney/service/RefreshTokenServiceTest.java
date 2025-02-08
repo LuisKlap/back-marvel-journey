@@ -20,6 +20,9 @@ class RefreshTokenServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private BCryptPasswordEncoder passwordEncoder;
+
     @InjectMocks
     private RefreshTokenService refreshTokenService;
 
@@ -31,16 +34,21 @@ class RefreshTokenServiceTest {
         user = new User();
         user.setEmail("test@example.com");
         user.setMetadata(new ArrayList<>());
-        user.getMetadata().add(new User.Metadata());
     }
 
     @Test
     void testGenerateRefreshToken() {
         long refreshTokenDurationMs = 3600000;
-        String refreshToken = refreshTokenService.generateRefreshToken(user, refreshTokenDurationMs);
+        String refreshToken = "validRefreshToken";
+        String refreshTokenHash = new BCryptPasswordEncoder().encode(refreshToken);
 
-        assertNotNull(refreshToken);
-        assertTrue(new BCryptPasswordEncoder().matches(refreshToken, user.getMetadata().get(0).getRefreshTokenHash()));
+        when(passwordEncoder.encode(anyString())).thenReturn(refreshTokenHash);
+        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
+
+        String generatedToken = refreshTokenService.generateRefreshToken(user, refreshTokenDurationMs);
+
+        assertNotNull(generatedToken);
+        assertTrue(passwordEncoder.matches(refreshToken, user.getMetadata().get(0).getRefreshTokenHash()));
         assertNotNull(user.getMetadata().get(0).getRefreshTokenExpiryDate());
         assertTrue(user.getMetadata().get(0).getRefreshTokenExpiryDate().isAfter(Instant.now()));
 
@@ -51,11 +59,17 @@ class RefreshTokenServiceTest {
     void testGenerateRefreshTokenWithNullMetadata() {
         user.setMetadata(null);
         long refreshTokenDurationMs = 3600000;
-        String refreshToken = refreshTokenService.generateRefreshToken(user, refreshTokenDurationMs);
+        String refreshToken = "validRefreshToken";
+        String refreshTokenHash = new BCryptPasswordEncoder().encode(refreshToken);
 
-        assertNotNull(refreshToken);
+        when(passwordEncoder.encode(anyString())).thenReturn(refreshTokenHash);
+        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
+
+        String generatedToken = refreshTokenService.generateRefreshToken(user, refreshTokenDurationMs);
+
+        assertNotNull(generatedToken);
         assertNotNull(user.getMetadata());
-        assertTrue(new BCryptPasswordEncoder().matches(refreshToken, user.getMetadata().get(0).getRefreshTokenHash()));
+        assertTrue(passwordEncoder.matches(refreshToken, user.getMetadata().get(0).getRefreshTokenHash()));
         assertNotNull(user.getMetadata().get(0).getRefreshTokenExpiryDate());
         assertTrue(user.getMetadata().get(0).getRefreshTokenExpiryDate().isAfter(Instant.now()));
 

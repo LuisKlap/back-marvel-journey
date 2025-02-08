@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -18,21 +17,32 @@ public class RefreshTokenService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
+
     public String generateRefreshToken(User user, long refreshTokenDurationMs) {
         String refreshToken = UUID.randomUUID().toString();
-        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
         String refreshTokenHash = passwordEncoder.encode(refreshToken);
 
         if (user.getMetadata() == null) {
-            List<User.Metadata> metadataList = new ArrayList<>();
-            metadataList.add(new User.Metadata());
-            user.setMetadata(metadataList);
+            user.setMetadata(new ArrayList<>());
         }
 
+        boolean tokenExists = false;
         for (User.Metadata metadata : user.getMetadata()) {
-            metadata.setRefreshTokenHash(refreshTokenHash);
-            metadata.setRefreshTokenExpiryDate(Instant.now().plusMillis(refreshTokenDurationMs));
+            if (passwordEncoder.matches(refreshToken, metadata.getRefreshTokenHash())) {
+                tokenExists = true;
+                break;
+            }
         }
+
+        if (!tokenExists) {
+            User.Metadata newMetadata = new User.Metadata();
+            newMetadata.setRefreshTokenHash(refreshTokenHash);
+            newMetadata.setRefreshTokenExpiryDate(Instant.now().plusMillis(refreshTokenDurationMs));
+            user.getMetadata().add(newMetadata);
+        }
+
         userRepository.save(user);
         return refreshToken;
     }

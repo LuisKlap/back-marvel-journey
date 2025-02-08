@@ -100,11 +100,24 @@ public class UserService {
         if (user.getMetadata() == null) {
             user.setMetadata(new ArrayList<>());
         }
-        User.Metadata metadata = new User.Metadata();
-        metadata.setLastLoginAt(Instant.now());
-        metadata.setIpAddress(ipAddress);
-        metadata.setUserAgent(userAgent);
-        user.getMetadata().add(metadata);
+
+        boolean metadataExists = false;
+        for (User.Metadata metadata : user.getMetadata()) {
+            if (metadata.getIpAddress().equals(ipAddress) && metadata.getUserAgent().equals(userAgent)) {
+                metadata.setLastLoginAt(Instant.now());
+                metadataExists = true;
+                break;
+            }
+        }
+
+        if (!metadataExists) {
+            User.Metadata newMetadata = new User.Metadata();
+            newMetadata.setLastLoginAt(Instant.now());
+            newMetadata.setIpAddress(ipAddress);
+            newMetadata.setUserAgent(userAgent);
+            user.getMetadata().add(newMetadata);
+        }
+
         logger.info("Atualizando metadata para o usuário: {}", user.getEmail());
         updateUser(user);
     }
