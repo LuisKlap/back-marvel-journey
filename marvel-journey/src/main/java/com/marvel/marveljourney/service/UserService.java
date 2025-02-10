@@ -1,7 +1,15 @@
 package com.marvel.marveljourney.service;
 
+import com.marvel.marveljourney.exception.ErrorCode;
+import com.marvel.marveljourney.exception.UserNotFoundException;
 import com.marvel.marveljourney.model.User;
+import com.marvel.marveljourney.model.User.MfaData;
+import com.marvel.marveljourney.model.User.VerificationCode;
 import com.marvel.marveljourney.repository.UserRepository;
+import com.marvel.marveljourney.dto.RegisterRequest;
+import com.marvel.marveljourney.security.VerificationCodeUtil;
+import com.marvel.marveljourney.service.EmailService;
+import com.marvel.marveljourney.util.PasswordValidatorUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +32,12 @@ public class UserService {
 
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
+
+    @Autowired
+    private EmailService emailService;
+
+    @Autowired
+    private PasswordValidatorUtil passwordValidatorUtil;
 
     public User findByEmail(String email) {
         return userRepository.findByEmail(email).orElse(null);
@@ -180,5 +194,50 @@ public class UserService {
         verificationCode.setCreatedAt(createdAt);
         user.setVerificationCode(verificationCode);
         userRepository.save(user);
+    }
+
+    public void registerUser(RegisterRequest registerRequest) {
+        User userExist = findByEmail(registerRequest.getEmail());
+
+        if (userExist != null) {
+            throw new IllegalArgumentException(ErrorCode.EMAIL_ALREADY_REGISTERED.getMessage());
+        }
+
+        if (!passwordValidatorUtil.validate(registerRequest.getPassword())) {
+            throw new IllegalArgumentException(ErrorCode.WEAK_PASSWORD.getMessage() + " "
+                    + String.join(", ", passwordValidatorUtil.getMessages(registerRequest.getPassword())));
+        }
+
+        User user = new User();
+        user.setEmail(registerRequest.getEmail());
+        user.setPasswordHash(passwordEncoder.encode(registerRequest.getPassword()));
+        user.setCreatedAt(Instant.now());
+        user.setUpdatedAt(Instant.now());
+        user.setTermsAcceptedAt(Instant.now());
+        user.setStatus("active");
+        user.setRoles(List.of("ROLE_USER"));
+        user.setLoginAttempts(new User.LoginAttempts());
+        user.setMetadata(new ArrayList<>());
+        User.Metadata metadata = new User.Metadata();
+        metadata.setDevice(registerRequest.getDevice());
+        metadata.setIpAddress(registerRequest.getIpAddress());
+        metadata.setUserAgent(registerRequest.getUserAgent());
+        user.getMetadata().add(metadata);
+
+        MfaData mfaData = new MfaData();
+        mfaData.setSecret(null);
+        mfaData.setEnabled(false);
+        user.setMfa(mfaData);
+
+        String verificationCode = VerificationCodeUtil.generateCode();
+        emailService.sendVerificationEmail(user.getEmail(), verificationCode);
+
+        VerificationCode verification = new User.VerificationCode();
+        verification.setEmailIsVerified(false);
+        verification.setCode(verificationCode);
+        verification.setCreatedAt(Instant.now());
+        user.setVerificationCode(verification);
+
+        saveUser(user);
     }
 }

@@ -77,54 +77,8 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody RegisterRequest registerRequest) {
         try {
-            User userExist = userService.findByEmail(registerRequest.getEmail());
-
-            if (userExist != null) {
-                logger.warn("Tentativa de registro com email já existente: {}", registerRequest.getEmail());
-                return ResponseEntity.status(400).body(Map.of("error", ErrorCode.EMAIL_ALREADY_REGISTERED.name(),
-                        "message", ErrorCode.EMAIL_ALREADY_REGISTERED.getMessage()));
-            }
-
-            if (!passwordValidatorUtil.validate(registerRequest.getPassword())) {
-                logger.warn("Tentativa de registro com senha fraca: {}", registerRequest.getEmail());
-                return ResponseEntity.status(400).body(Map.of("error", ErrorCode.WEAK_PASSWORD.name(), "message",
-                        ErrorCode.WEAK_PASSWORD.getMessage() + " "
-                                + String.join(", ", passwordValidatorUtil.getMessages(registerRequest.getPassword()))));
-            }
-
-            User user = new User();
-            user.setEmail(registerRequest.getEmail());
-            user.setPasswordHash(passwordEncoder.encode(registerRequest.getPassword()));
-            user.setCreatedAt(Instant.now());
-            user.setUpdatedAt(Instant.now());
-            user.setTermsAcceptedAt(Instant.now());
-            user.setStatus("active");
-            user.setRoles(List.of("ROLE_USER"));
-            user.setLoginAttempts(new User.LoginAttempts());
-            user.setMetadata(new ArrayList<>());
-            User.Metadata metadata = new User.Metadata();
-            metadata.setDevice(registerRequest.getDevice());
-            metadata.setIpAddress(registerRequest.getIpAddress());
-            metadata.setUserAgent(registerRequest.getUserAgent());
-            user.getMetadata().add(metadata);
-
-            MfaData mfaData = new MfaData();
-            mfaData.setSecret(null);
-            mfaData.setEnabled(false);
-            user.setMfa(mfaData);
-
-            String verificationCode = VerificationCodeUtil.generateCode();
-            emailService.sendVerificationEmail(user.getEmail(), verificationCode);
-
-            VerificationCode verification = new User.VerificationCode();
-            verification.setEmailIsVerified(false);
-            verification.setCode(verificationCode);
-            verification.setCreatedAt(Instant.now());
-            user.setVerificationCode(verification);
-
-            userService.saveUser(user);
-            return ResponseEntity.ok(
-                    Map.of("message", "Registration successful. Please check your email for the verification code."));
+            userService.registerUser(registerRequest);
+            return ResponseEntity.ok(Map.of("message", "Registration successful. Please check your email for the verification code."));
         } catch (Exception e) {
             logger.error("Erro ao registrar usuário", e);
             return ResponseEntity.status(500).body(Map.of("error", ErrorCode.INTERNAL_SERVER_ERROR.name(), "message",
