@@ -24,9 +24,6 @@ public class TwoFactorAuthService {
     @Autowired
     private UserRepository userRepository;
 
-    @Autowired
-    private TwoFactorAuthService twoFactorAuthService;
-
     public String generateSecret() {
         return secretGenerator.generate();
     }
@@ -50,14 +47,14 @@ public class TwoFactorAuthService {
     }
 
     public byte[] setup2FA(String email) throws QrGenerationException {
-        String secret = twoFactorAuthService.generateSecret();
+        String secret = generateSecret();
         saveUserSecret(email, secret);
-        return twoFactorAuthService.generateQrCodeImage(secret, email);
+        return generateQrCodeImage(secret, email);
     }
 
     public boolean verify2FA(String email, String code) {
         String secret = getUserSecret(email);
-        return twoFactorAuthService.verifyCode(secret, code);
+        return verifyCode(secret, code);
     }
 
     public void saveUserSecret(String email, String secret) {

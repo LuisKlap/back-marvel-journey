@@ -25,9 +25,6 @@ public class RefreshTokenService {
     @Autowired
     private JwtUtil jwtUtil;
 
-    @Autowired
-    private RefreshTokenService refreshTokenService;
-
     public String generateRefreshToken(User user, long refreshTokenDurationMs) {
         String refreshToken = UUID.randomUUID().toString();
         String refreshTokenHash = passwordEncoder.encode(refreshToken);
@@ -94,7 +91,7 @@ public class RefreshTokenService {
         }
 
         String token = jwtUtil.generateToken(user.getEmail(), jwtExpirationTime, issuer, audience, user.getRoles());
-        String newRefreshToken = refreshTokenService.generateRefreshToken(user, refreshTokenDurationMs);
+        String newRefreshToken = generateRefreshToken(user, refreshTokenDurationMs);
         return Map.of("token", token, "refreshToken", newRefreshToken);
     }
 

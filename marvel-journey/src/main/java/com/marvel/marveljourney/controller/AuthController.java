@@ -7,7 +7,6 @@ import com.marvel.marveljourney.dto.MfaRequest;
 import com.marvel.marveljourney.exception.ErrorCode;
 import com.marvel.marveljourney.exception.UserNotFoundException;
 import com.marvel.marveljourney.service.UserAuthService;
-import com.marvel.marveljourney.service.UserMetadataService;
 import com.marvel.marveljourney.service.UserService;
 import com.marvel.marveljourney.service.EmailVerificationService;
 import com.marvel.marveljourney.service.TwoFactorAuthService;
@@ -37,7 +36,6 @@ public class AuthController {
     private final EmailVerificationService emailVerificationService;
     private final TwoFactorAuthService twoFactorAuthService;
     private final RefreshTokenService refreshTokenService;
-    private final UserMetadataService userMetadataService;
     private final UserService userService;
 
     @Value("${jwt.refresh.expiration.time}")
@@ -50,12 +48,11 @@ public class AuthController {
     private static final String AUDIENCE = "seu-aplicativo";
 
     public AuthController(UserAuthService userAuthService, EmailVerificationService emailVerificationService,
-                          TwoFactorAuthService twoFactorAuthService, RefreshTokenService refreshTokenService, UserMetadataService userMetadataService, UserService userService) {
+                          TwoFactorAuthService twoFactorAuthService, RefreshTokenService refreshTokenService, UserService userService) {
         this.userAuthService = userAuthService;
         this.emailVerificationService = emailVerificationService;
         this.twoFactorAuthService = twoFactorAuthService;
         this.refreshTokenService = refreshTokenService;
-        this.userMetadataService = userMetadataService;
         this.userService = userService;
     }
 
