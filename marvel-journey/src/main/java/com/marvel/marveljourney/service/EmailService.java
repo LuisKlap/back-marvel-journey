@@ -4,7 +4,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,5 +40,23 @@ public class EmailService {
         } catch (MailException e) {
             logger.error("Erro ao enviar email de verificação para {}: {}", to, e.getMessage());
         }
+    }
+
+    public void sendPasswordResetEmail(String email, String resetToken) {
+        String subject = "Reset de Senha";
+        String content = "Para resetar sua senha, use o seguinte token: " + resetToken;
+
+        MimeMessage message = javaMailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message);
+
+        try {
+            helper.setTo(email);
+            helper.setSubject(subject);
+            helper.setText(content);
+        } catch (MessagingException e) {
+            throw new RuntimeException("Erro ao enviar email de reset de senha", e);
+        }
+
+        javaMailSender.send(message);
     }
 }

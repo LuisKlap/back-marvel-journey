@@ -4,6 +4,7 @@ import com.marvel.marveljourney.dto.LoginRequest;
 import com.marvel.marveljourney.dto.RegisterRequest;
 import com.marvel.marveljourney.dto.VerificationRequest;
 import com.marvel.marveljourney.dto.MfaRequest;
+import com.marvel.marveljourney.dto.PasswordResetRequest;
 import com.marvel.marveljourney.exception.ErrorCode;
 import com.marvel.marveljourney.exception.UserNotFoundException;
 import com.marvel.marveljourney.service.UserAuthService;
@@ -187,5 +188,19 @@ public class AuthController {
             return ResponseEntity.status(404).body(Map.of("error", ErrorCode.USER_NOT_FOUND.name(), "message",
                     ErrorCode.USER_NOT_FOUND.getMessage()));
         }
+    }
+
+    @Operation(summary = "Iniciar reset de senha")
+    @PostMapping("/password-reset/initiate")
+    public ResponseEntity<?> initiatePasswordReset(@RequestParam String email) {
+        userAuthService.initiatePasswordReset(email);
+        return ResponseEntity.ok("Instruções de reset de senha enviadas para o email.");
+    }
+
+    @Operation(summary = "Confirmar reset de senha")
+    @PostMapping("/password-reset/confirm")
+    public ResponseEntity<?> confirmPasswordReset(@RequestBody PasswordResetRequest passwordResetRequest) {
+        userAuthService.confirmPasswordReset(passwordResetRequest);
+        return ResponseEntity.ok("Senha resetada com sucesso.");
     }
 }

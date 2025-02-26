@@ -16,4 +16,5 @@ public interface UserRepository extends MongoRepository<User, String>, UserRepos
     void verifyEmail(String email);
     boolean emailIsVerified(String email);
     User findByRefreshTokenHash(String refreshTokenHash);
+    Optional<User> findByResetToken(String resetToken);
 }

@@ -79,4 +79,11 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
         Query query = new Query(Criteria.where("refreshTokenHash").is(refreshTokenHash));
         return mongoTemplate.findOne(query, User.class);
     }
+
+    @Override
+    public Optional<User> findByResetToken(String resetToken) {
+        logger.debug("Procurando usuário por resetToken: {}", resetToken);
+        Query query = new Query(Criteria.where("resetToken").is(resetToken));
+        return Optional.ofNullable(mongoTemplate.findOne(query, User.class));
+    }
 }

@@ -10,7 +10,8 @@ public enum ErrorCode {
     EMAIL_ALREADY_REGISTERED("Email already registered."),
     WEAK_PASSWORD("Weak password."),
     EXPIRED_VERIFICATION_CODE("Verification code expired."),
-    INVALID_PASSWORD("Invalid password.");
+    INVALID_PASSWORD("Invalid password."),
+    INVALID_RESET_TOKEN("Invalid reset token.");
 
     private final String message;
 

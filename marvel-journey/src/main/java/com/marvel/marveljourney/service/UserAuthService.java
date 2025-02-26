@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 public class UserAuthService {
@@ -76,5 +77,29 @@ public class UserAuthService {
             throw new IllegalArgumentException("Invalid or expired refresh token.");
         }
         refreshTokenService.deleteRefreshToken(user, refreshToken);
+    }
+
+    public void initiatePasswordReset(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException(ErrorCode.USER_NOT_FOUND.getMessage()));
+
+        String resetToken = UUID.randomUUID().toString();
+        user.setResetToken(resetToken);
+        userRepository.save(user);
+
+        emailService.sendPasswordResetEmail(user.getEmail(), resetToken);
+    }
+
+    public void confirmPasswordReset(PasswordResetRequest passwordResetRequest) {
+        User user = userRepository.findByResetToken(passwordResetRequest.getResetToken())
+                .orElseThrow(() -> new IllegalArgumentException(ErrorCode.INVALID_RESET_TOKEN.getMessage()));
+
+        if (!passwordValidatorUtil.validate(passwordResetRequest.getNewPassword())) {
+            throw new IllegalArgumentException(ErrorCode.INVALID_PASSWORD.getMessage());
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(passwordResetRequest.getNewPassword()));
+        user.setResetToken(null);
+        userRepository.save(user);
     }
 }

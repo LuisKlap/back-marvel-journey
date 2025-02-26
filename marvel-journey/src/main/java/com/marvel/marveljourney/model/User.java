@@ -19,6 +19,7 @@ public class User {
     private Instant createdAt;
     private Instant updatedAt;
     private String status;
+    private String resetToken;
     private LoginAttempts loginAttempts;
     private List<String> roles;
     private List<Metadata> metadata;
