@@ -190,15 +190,8 @@ public class AuthController {
         }
     }
 
-    @Operation(summary = "Iniciar reset de senha")
-    @PostMapping("/password-reset/initiate")
-    public ResponseEntity<?> initiatePasswordReset(@RequestParam String email) {
-        userAuthService.initiatePasswordReset(email);
-        return ResponseEntity.ok("Instruções de reset de senha enviadas para o email.");
-    }
-
     @Operation(summary = "Confirmar reset de senha")
-    @PostMapping("/password-reset/confirm")
+    @PostMapping("/password-reset")
     public ResponseEntity<?> confirmPasswordReset(@RequestBody PasswordResetRequest passwordResetRequest) {
         userAuthService.confirmPasswordReset(passwordResetRequest);
         return ResponseEntity.ok("Senha resetada com sucesso.");
